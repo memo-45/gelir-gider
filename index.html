@@ -305,6 +305,15 @@ select option{background:var(--bg2)}
 .ozet-kredi{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:12px 16px;box-shadow:var(--shadow);margin-bottom:8px}
 .ozet-kredi-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
 .ozet-kredi-name{font-size:14px;font-weight:700}
+
+/* EDIT MODAL */
+.edit-modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.5);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;z-index:200;padding:20px}
+.edit-modal-bg.hidden{display:none}
+.edit-modal{background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r);padding:28px;max-width:480px;width:100%;box-shadow:var(--shadow2);max-height:90vh;overflow-y:auto}
+.edit-modal h3{font-size:18px;font-weight:700;margin-bottom:20px}
+.edit-actions{display:flex;gap:8px;margin-top:18px}
+.bico.edit{background:var(--bg3);border-color:var(--border2)}
+.bico.edit:hover{background:var(--blue-bg);border-color:var(--blue-border);color:var(--blue)}
 </style>
 </head>
 <body>
@@ -545,6 +554,18 @@ create policy "anon_all" on taksitler for all using (true) with check (true);</d
     </div>
   </main>
 </div>
+
+<!-- EDIT MODAL -->
+<div class="edit-modal-bg hidden" id="edit-modal">
+  <div class="edit-modal">
+    <h3 id="edit-title">Düzenle</h3>
+    <div id="edit-body"></div>
+    <div class="edit-actions">
+      <button class="btn" onclick="saveEdit()">Kaydet</button>
+      <button class="btn-sm outline" style="padding:10px 18px" onclick="closeEdit()">İptal</button>
+    </div>
+  </div>
+</div>
 <div class="toast" id="toast"></div>
 
 <script>
@@ -651,7 +672,7 @@ function render(){
 
 function iRow(i,mini){
   const c=i.tur==='gelir'?'g':'r';
-  return`<div class="row"><div class="ri ${c}">${ICONS[i.kategori]||'📌'}</div><div class="rinfo"><div class="rtitle">${esc(i.aciklama)}</div><div class="rsub">${i.kategori} · ${new Date(i.tarih).toLocaleDateString('tr-TR')}</div></div><span class="ramt ${c}">${i.tur==='gelir'?'+':'-'}${fmt(i.tutar)}</span>${mini?'':`<div class="rack"><button class="bico" onclick="delI('${i.id}')">✕</button></div>`}</div>`;
+  return`<div class="row"><div class="ri ${c}">${ICONS[i.kategori]||'📌'}</div><div class="rinfo"><div class="rtitle">${esc(i.aciklama)}</div><div class="rsub">${i.kategori} · ${new Date(i.tarih).toLocaleDateString('tr-TR')}</div></div><span class="ramt ${c}">${i.tur==='gelir'?'+':'-'}${fmt(i.tutar)}</span>${mini?'':`<div class="rack"><button class="bico edit" onclick="editIslem('${i.id}')">✎</button><button class="bico" onclick="delI('${i.id}')">✕</button></div>`}</div>`;
 }
 function rI(id,list,mini){const e=document.getElementById(id);if(!e)return;if(!list.length){e.innerHTML='<div class="empty">İşlem bulunamadı</div>';return;}e.innerHTML=list.map(x=>iRow(x,mini)).join('');}
 
@@ -667,7 +688,7 @@ function sRow(s,mini,y,m){
     <div class="ri ${c}">${ICONS[s.kategori]||'📌'}</div>
     <div class="rinfo"><div class="rtitle">${esc(s.aciklama)}</div><div class="rsub">${s.kategori} · Her ayın ${s.gun}. günü${s.not?' · '+esc(s.not):''}</div></div>
     <span class="ramt ${c}">${s.tur==='gelir'?'+':'-'}${fmt(s.tutar)}</span>
-    ${mini?'':`<div class="rack"><button class="bico" onclick="delS('${s.id}')">✕</button></div>`}
+    ${mini?'':`<div class="rack"><button class="bico edit" onclick="editSabit('${s.id}')">✎</button><button class="bico" onclick="delS('${s.id}')">✕</button></div>`}
   </div>`;
 }
 function rS(id,list,mini){
@@ -873,6 +894,7 @@ function rKartlar(id){
       <div class="kart-actions">
         <input class="kart-ode-inp" type="number" id="ode-${k.id}" placeholder="Ödeme tutarı gir...">
         <button class="btn-sm" onclick="kartOde('${k.id}')">Öde</button>
+        <button class="btn-sm outline" onclick="editKart('${k.id}')" style="padding:8px 10px">✎</button>
         <button class="btn-sm red" onclick="delKart('${k.id}')">✕</button>
       </div>
       ${kartTaksitHTML}
@@ -908,7 +930,7 @@ function rKrediler(id){
           <div class="kredi-sub">Aylık ${fmt(aylikTaksit)} · ${odenen}/${kr.sayi} ödendi · Kalan ${fmt(kalanBorc)}</div>
         </div>
         <div style="font-size:16px;font-weight:700;letter-spacing:-.3px">${fmt(Number(kr.tutar))}</div>
-        <button class="bico" onclick="delKredi('${kr.id}')">✕</button>
+        <button class="bico edit" onclick="editKredi('${kr.id}')">✎</button><button class="bico" onclick="delKredi('${kr.id}')">✕</button>
       </div>
       <div class="kredi-stats">
         <div class="kredi-stat"><div class="kart-lbl">Toplam</div><div style="font-size:15px;font-weight:700">${fmt(Number(kr.tutar))}</div></div>
@@ -985,6 +1007,133 @@ async function toggleKredi(id,idx){
 async function delKredi(id){
   D.krediler=D.krediler.filter(k=>k.id!==id);saveLocal();render();toast('Silindi');
   if(SB)try{await sbDel('krediler',id);}catch(e){}
+}
+
+
+// ── EDIT ───────────────────────────────────────────────
+let editState={type:null,id:null};
+
+function closeEdit(){document.getElementById('edit-modal').classList.add('hidden');}
+
+function openEdit(title,bodyHTML,type,id){
+  editState={type,id};
+  document.getElementById('edit-title').textContent=title;
+  document.getElementById('edit-body').innerHTML=bodyHTML;
+  document.getElementById('edit-modal').classList.remove('hidden');
+}
+
+function editIslem(id){
+  const i=D.islemler.find(x=>x.id===id);if(!i)return;
+  openEdit('İşlem Düzenle',`
+    <div class="fgrid g3">
+      <div class="fg"><label>Tarih</label><input type="date" id="e-tarih" value="${i.tarih}"></div>
+      <div class="fg"><label>Tutar (₺)</label><input type="number" id="e-tutar" value="${i.tutar}"></div>
+      <div class="fg"><label>Tür</label><select id="e-tur"><option value="gider" ${i.tur==='gider'?'selected':''}>Gider</option><option value="gelir" ${i.tur==='gelir'?'selected':''}>Gelir</option></select></div>
+    </div>
+    <div class="fgrid g2" style="margin-top:12px">
+      <div class="fg"><label>Açıklama</label><input type="text" id="e-aciklama" value="${esc(i.aciklama)}"></div>
+      <div class="fg"><label>Kategori</label><select id="e-kategori"><option>Market</option><option>Restoran</option><option>Ulaşım</option><option>Sağlık</option><option>Giyim</option><option>Eğlence</option><option>Fatura</option><option>Diğer</option><option>Maaş</option><option>Kira Geliri</option><option>Diğer Gelir</option></select></div>
+    </div>
+  `,'islem',id);
+  setTimeout(()=>{document.getElementById('e-kategori').value=i.kategori;},10);
+}
+
+function editSabit(id){
+  const s=D.sabitler.find(x=>x.id===id);if(!s)return;
+  openEdit('Sabit Ödeme Düzenle',`
+    <div class="fgrid g3">
+      <div class="fg"><label>Ödeme Günü</label><input type="number" id="e-gun" value="${s.gun}" min="1" max="31"></div>
+      <div class="fg"><label>Tutar (₺)</label><input type="number" id="e-tutar" value="${s.tutar}"></div>
+      <div class="fg"><label>Tür</label><select id="e-tur"><option value="gider" ${s.tur==='gider'?'selected':''}>Gider</option><option value="gelir" ${s.tur==='gelir'?'selected':''}>Gelir</option></select></div>
+    </div>
+    <div class="fgrid g2" style="margin-top:12px">
+      <div class="fg"><label>Açıklama</label><input type="text" id="e-aciklama" value="${esc(s.aciklama)}"></div>
+      <div class="fg"><label>Kategori</label><select id="e-kategori"><option>Kira</option><option>Aidat</option><option>Elektrik</option><option>Su</option><option>Doğalgaz</option><option>İnternet</option><option>Telefon</option><option>Abonelik</option><option>Maaş</option><option>Diğer</option></select></div>
+    </div>
+    <div class="fgrid" style="grid-template-columns:1fr;margin-top:12px">
+      <div class="fg"><label>Adres / Notlar</label><input type="text" id="e-not" value="${esc(s.not||'')}"></div>
+    </div>
+  `,'sabit',id);
+  setTimeout(()=>{document.getElementById('e-kategori').value=s.kategori;},10);
+}
+
+function editTaksit(id){
+  const t=D.taksitler.find(x=>x.id===id);if(!t)return;
+  openEdit('Taksit Düzenle',`
+    <div class="fgrid g2">
+      <div class="fg"><label>Açıklama</label><input type="text" id="e-aciklama" value="${esc(t.aciklama)}"></div>
+      <div class="fg"><label>Kart / Kaynak</label><input type="text" id="e-kart" value="${esc(t.kart||'')}"></div>
+    </div>
+    <div class="fgrid g3" style="margin-top:12px">
+      <div class="fg"><label>Toplam Tutar</label><input type="number" id="e-tutar" value="${t.tutar}"></div>
+      <div class="fg"><label>Taksit Sayısı</label><input type="number" id="e-sayi" value="${t.sayi}"></div>
+      <div class="fg"><label>Başlangıç Ayı</label><input type="month" id="e-baslangic" value="${t.baslangic}"></div>
+    </div>
+  `,'taksit',id);
+}
+
+function editKart(id){
+  const k=D.kartlar.find(x=>x.id===id);if(!k)return;
+  openEdit('Kart Düzenle',`
+    <div class="fgrid g2">
+      <div class="fg"><label>Banka Adı</label><input type="text" id="e-banka" value="${esc(k.banka)}"></div>
+      <div class="fg"><label>Kart Türü</label><select id="e-tur"><option value="Kredi Kartı" ${k.tur==='Kredi Kartı'?'selected':''}>Kredi Kartı</option><option value="Ek Hesap" ${k.tur==='Ek Hesap'?'selected':''}>Ek Hesap</option></select></div>
+    </div>
+    <div class="fgrid g3" style="margin-top:12px">
+      <div class="fg"><label>Toplam Limit</label><input type="number" id="e-limit" value="${k.limit_tutar}"></div>
+      <div class="fg"><label>Mevcut Borç</label><input type="number" id="e-borc" value="${k.borc}"></div>
+      <div class="fg"><label>Son Ödeme Günü</label><input type="number" id="e-sogun" value="${k.son_odeme_gunu||''}" min="1" max="31"></div>
+    </div>
+    <div class="fgrid" style="grid-template-columns:1fr;margin-top:12px">
+      <div class="fg"><label>Notlar</label><input type="text" id="e-notlar" value="${esc(k.notlar||'')}"></div>
+    </div>
+  `,'kart',id);
+}
+
+function editKredi(id){
+  const kr=D.krediler.find(x=>x.id===id);if(!kr)return;
+  openEdit('Kredi Düzenle',`
+    <div class="fgrid g2">
+      <div class="fg"><label>Banka / Kurum</label><input type="text" id="e-banka" value="${esc(kr.banka)}"></div>
+      <div class="fg"><label>Kredi Türü</label><select id="e-krtur"><option value="Tüketici Kredisi" ${kr.tur==='Tüketici Kredisi'?'selected':''}>Tüketici Kredisi</option><option value="Taksitli Avans" ${kr.tur==='Taksitli Avans'?'selected':''}>Taksitli Avans</option><option value="Nakit Avans" ${kr.tur==='Nakit Avans'?'selected':''}>Nakit Avans</option><option value="İhtiyaç Kredisi" ${kr.tur==='İhtiyaç Kredisi'?'selected':''}>İhtiyaç Kredisi</option><option value="Taşıt Kredisi" ${kr.tur==='Taşıt Kredisi'?'selected':''}>Taşıt Kredisi</option><option value="Konut Kredisi" ${kr.tur==='Konut Kredisi'?'selected':''}>Konut Kredisi</option></select></div>
+    </div>
+    <div class="fgrid g3" style="margin-top:12px">
+      <div class="fg"><label>Toplam Tutar</label><input type="number" id="e-tutar" value="${kr.tutar}"></div>
+      <div class="fg"><label>Taksit Sayısı</label><input type="number" id="e-sayi" value="${kr.sayi}"></div>
+      <div class="fg"><label>Aylık Taksit</label><input type="number" id="e-taksit" value="${kr.taksit_tutar||''}"></div>
+    </div>
+  `,'kredi',id);
+}
+
+async function saveEdit(){
+  const{type,id}=editState;
+  const g=v=>document.getElementById(v)?document.getElementById(v).value:null;
+  if(type==='islem'){
+    const i=D.islemler.find(x=>x.id===id);if(!i)return;
+    i.tarih=g('e-tarih');i.tutar=parseFloat(g('e-tutar'));i.tur=g('e-tur');i.aciklama=g('e-aciklama');i.kategori=g('e-kategori');
+    saveLocal();render();closeEdit();toast('İşlem güncellendi ✓');
+    if(SB)try{await sbPatch('islemler',id,{tarih:i.tarih,tutar:i.tutar,tur:i.tur,aciklama:i.aciklama,kategori:i.kategori});}catch(e){}
+  } else if(type==='sabit'){
+    const s=D.sabitler.find(x=>x.id===id);if(!s)return;
+    s.gun=parseInt(g('e-gun'));s.tutar=parseFloat(g('e-tutar'));s.tur=g('e-tur');s.aciklama=g('e-aciklama');s.kategori=g('e-kategori');s.not=g('e-not')||'';
+    saveLocal();render();closeEdit();toast('Sabit ödeme güncellendi ✓');
+    if(SB)try{await sbPatch('sabitler',id,{gun:s.gun,tutar:s.tutar,tur:s.tur,aciklama:s.aciklama,kategori:s.kategori,not:s.not});}catch(e){}
+  } else if(type==='taksit'){
+    const t=D.taksitler.find(x=>x.id===id);if(!t)return;
+    t.aciklama=g('e-aciklama');t.kart=g('e-kart')||'';t.tutar=parseFloat(g('e-tutar'));t.baslangic=g('e-baslangic');
+    saveLocal();render();closeEdit();toast('Taksit güncellendi ✓');
+    if(SB)try{await sbPatch('taksitler',id,{aciklama:t.aciklama,kart:t.kart,tutar:t.tutar,baslangic:t.baslangic});}catch(e){}
+  } else if(type==='kart'){
+    const k=D.kartlar.find(x=>x.id===id);if(!k)return;
+    k.banka=g('e-banka');k.tur=g('e-tur');k.limit_tutar=parseFloat(g('e-limit'))||0;k.borc=parseFloat(g('e-borc'))||0;k.son_odeme_gunu=parseInt(g('e-sogun'))||0;k.notlar=g('e-notlar')||'';
+    saveLocal();render();closeEdit();toast('Kart güncellendi ✓');
+    if(SB)try{await sbPatch('kartlar',id,{banka:k.banka,tur:k.tur,limit_tutar:k.limit_tutar,borc:k.borc,son_odeme_gunu:k.son_odeme_gunu,notlar:k.notlar});}catch(e){}
+  } else if(type==='kredi'){
+    const kr=D.krediler.find(x=>x.id===id);if(!kr)return;
+    kr.banka=g('e-banka');kr.tur=g('e-krtur');kr.tutar=parseFloat(g('e-tutar'));kr.sayi=parseInt(g('e-sayi'));kr.taksit_tutar=parseFloat(g('e-taksit'))||kr.tutar/kr.sayi;
+    saveLocal();render();closeEdit();toast('Kredi güncellendi ✓');
+    if(SB)try{await sbPatch('krediler',id,{banka:kr.banka,tur:kr.tur,tutar:kr.tutar,sayi:kr.sayi,taksit_tutar:kr.taksit_tutar});}catch(e){}
+  }
 }
 
 // ── INIT ───────────────────────────────────────────────
