@@ -696,7 +696,7 @@ async function ekleTaksit(){
   const row={id:uid(),tutar,sayi,tur,aciklama,kart,baslangic,odenmisMi};
   D.taksitler.push(row);saveLocal();render();
   document.getElementById('t-a').value='';document.getElementById('t-tu').value='';document.getElementById('t-k').value='';
-  if(SB){try{await sbPost('taksitler',{...row,odenmis_mi:odenmisMi});toast('Kaydedildi ✓ (Supabase)');}catch(e){toast('Local kaydedildi.');}}
+  if(SB){try{await sbPost('taksitler',{id:row.id,tutar:row.tutar,sayi:row.sayi,tur:row.tur,aciklama:row.aciklama,kart:row.kart,baslangic:row.baslangic,odenmis_mi:odenmisMi});toast('Kaydedildi ✓ (Supabase)');}catch(e){toast('Local kaydedildi.');}}
   else toast('Kaydedildi ✓');
 }
 async function delI(id){D.islemler=D.islemler.filter(i=>i.id!==id);saveLocal();render();toast('Silindi');if(SB)try{await sbDel('islemler',id);}catch(e){}}
@@ -846,7 +846,7 @@ async function ekleKredi(){
   D.krediler.push(row);saveLocal();render();
   document.getElementById('kredi-form-wrap').style.display='none';
   ['kr-banka','kr-tutar','kr-sayi','kr-taksit','kr-notlar'].forEach(x=>document.getElementById(x).value='');
-  if(SB){try{await sbPost('krediler',{...row,odenmis_mi:odenmisMi});toast('Kredi kaydedildi ✓');}catch(e){toast('Local kaydedildi.');}}
+  if(SB){try{await sbPost('krediler',{id:row.id,banka:row.banka,tur:row.tur,tutar:row.tutar,sayi:row.sayi,taksit_tutar:row.taksit_tutar,baslangic:row.baslangic,notlar:row.notlar,odenmis_mi:odenmisMi});toast('Kredi kaydedildi ✓');}catch(e){toast('Local kaydedildi.');}}
   else toast('Kredi kaydedildi ✓');
 }
 
