@@ -278,6 +278,33 @@ select option{background:var(--bg2)}
 .kredi-sub{font-size:12px;color:var(--text2);margin-top:3px}
 .kredi-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px}
 .kredi-stat{background:var(--bg3);border-radius:var(--r3);padding:10px 12px}
+
+/* SABİT ÖDEME TİK */
+.sabit-row{display:flex;align-items:center;gap:12px;padding:13px 18px;border-bottom:1px solid var(--border);transition:background .1s}
+.sabit-row:last-child{border-bottom:none}
+.sabit-row:hover{background:var(--bg3)}
+.sabit-row.paid{background:var(--green-bg)}
+.stik{width:26px;height:26px;border-radius:50%;border:2px solid var(--border2);background:var(--bg3);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;transition:all .15s}
+.stik:hover{border-color:var(--green);background:var(--green-bg)}
+.stik.paid{background:var(--green);border-color:var(--green);color:#fff}
+.sabit-row.paid .rtitle{text-decoration:line-through;color:var(--text2)}
+
+/* ÖZET KARTLAR */
+.ozet-kartlar{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;margin-bottom:8px}
+.ozet-kart{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:14px 16px;box-shadow:var(--shadow)}
+.ozet-kart-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.ozet-kart-name{font-size:14px;font-weight:700}
+.ozet-kart-tur{font-size:11px;color:var(--text3);font-weight:600}
+.ozet-kart-nums{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:8px}
+.ozk-n{text-align:center}
+.ozk-lbl{font-size:10px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:.4px}
+.ozk-val{font-size:13px;font-weight:700;margin-top:2px}
+.ozk-val.r{color:var(--red)}.ozk-val.g{color:var(--green)}.ozk-val.b{color:var(--blue)}
+
+/* ÖZET KREDİ */
+.ozet-kredi{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:12px 16px;box-shadow:var(--shadow);margin-bottom:8px}
+.ozet-kredi-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.ozet-kredi-name{font-size:14px;font-weight:700}
 </style>
 </head>
 <body>
@@ -349,8 +376,10 @@ create policy "anon_all" on taksitler for all using (true) with check (true);</d
         <div class="stat b"><div class="slbl">Net Bakiye</div><div class="sval" id="sn">₺0</div></div>
       </div>
       <div class="sec"><div class="sec-head"><span class="sec-title">Bu ay işlemler</span></div><div class="card" id="oi"><div class="empty">İşlem yok</div></div></div>
-      <div class="sec"><div class="sec-head"><span class="sec-title">Sabit ödemeler</span></div><div class="card" id="os"><div class="empty">Sabit ödeme yok</div></div></div>
+      <div class="sec"><div class="sec-head"><span class="sec-title">Sabit ödemeler — bu ay</span></div><div class="card" id="os"><div class="empty">Sabit ödeme yok</div></div></div>
       <div class="sec"><div class="sec-head"><span class="sec-title">Bu ay taksitler</span></div><div id="ot"><div class="empty">Taksit yok</div></div></div>
+      <div class="sec"><div class="sec-head"><span class="sec-title">Kredi kartları</span></div><div id="ozet-kartlar"><div class="empty">Kart yok</div></div></div>
+      <div class="sec"><div class="sec-head"><span class="sec-title">Krediler</span></div><div id="ozet-krediler"><div class="empty">Kredi yok</div></div></div>
     </div>
 
     <!-- İŞLEMLER -->
@@ -364,7 +393,10 @@ create policy "anon_all" on taksitler for all using (true) with check (true);</d
 
     <!-- SABİT -->
     <div id="panel-sabit" class="panel">
-      <div class="page-header"><div><h1 class="page-title">Sabit Ödemeler</h1><p class="page-sub">Her ay tekrar eden gelir ve giderler</p></div></div>
+      <div class="page-header">
+        <div><h1 class="page-title">Sabit Ödemeler</h1><p class="page-sub" id="sabit-ay-sub">Her ay tekrar eden gelir ve giderler</p></div>
+        <div class="mnav"><button onclick="changeMonth(-1)">&#8592;</button><span class="mname" id="ml-sabit"></span><button onclick="changeMonth(1)">&#8594;</button></div>
+      </div>
       <div id="sl"><div class="empty">Sabit ödeme yok</div></div>
     </div>
 
@@ -521,11 +553,11 @@ const AY=['Oca','Şub','Mar','Nis','May','Haz','Tem','Ağu','Eyl','Eki','Kas','A
 const AYLONG=['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'];
 const ICONS={Market:'🛒',Restoran:'🍽',Ulaşım:'🚗',Sağlık:'💊',Giyim:'👕',Eğlence:'🎬',Fatura:'📄',Kira:'🏠',Aidat:'🏢',Elektrik:'⚡',Su:'💧',Doğalgaz:'🔥',İnternet:'📡',Telefon:'📱',Abonelik:'📺',Maaş:'💰','Kira Geliri':'🏠','Diğer Gelir':'💵',Diğer:'📌'};
 
-let D={islemler:[],sabitler:[],taksitler:[],kartlar:[],krediler:[]};
+let D={islemler:[],sabitler:[],taksitler:[],kartlar:[],krediler:[],sabitOdeme:{}};
 let CM={y:new Date().getFullYear(),m:new Date().getMonth()};
 let SB=null;
 
-function loadLocal(){try{const r=localStorage.getItem(LOCAL_KEY);if(r){const p=JSON.parse(r);D.islemler=p.islemler||[];D.sabitler=p.sabitler||[];D.taksitler=p.taksitler||[];D.kartlar=p.kartlar||[];D.krediler=p.krediler||[];}}catch(e){}}
+function loadLocal(){try{const r=localStorage.getItem(LOCAL_KEY);if(r){const p=JSON.parse(r);D.islemler=p.islemler||[];D.sabitler=p.sabitler||[];D.taksitler=p.taksitler||[];D.kartlar=p.kartlar||[];D.krediler=p.krediler||[];D.sabitOdeme=p.sabitOdeme||{};}}catch(e){}}
 function saveLocal(){try{localStorage.setItem(LOCAL_KEY,JSON.stringify(D));}catch(e){}}
 
 // ── SUPABASE REST ──────────────────────────────────────
@@ -587,7 +619,7 @@ function changeMonth(d){CM.m+=d;if(CM.m<0){CM.m=11;CM.y--;}if(CM.m>11){CM.m=0;CM
 // ── RENDER ─────────────────────────────────────────────
 function render(){
   const{y,m}=CM,lbl=AYLONG[m]+' '+y;
-  ['ml1','ml2'].forEach(id=>{const e=document.getElementById(id);if(e)e.textContent=lbl;});
+  ['ml1','ml2','ml-sabit'].forEach(id=>{const e=document.getElementById(id);if(e)e.textContent=lbl;});
   const sub=document.getElementById('sub-ozet');if(sub)sub.textContent=lbl+' dönemi';
 
   const ayI=D.islemler.filter(i=>{const d=new Date(i.tarih);return d.getFullYear()===y&&d.getMonth()===m;});
@@ -613,6 +645,8 @@ function render(){
   rTOzet('ot',y,m);rTF('tl');
   rKartlar('kart-list');
   rKrediler('kredi-list');
+  rOzetKartlar('ozet-kartlar');
+  rOzetKrediler('ozet-krediler');
 }
 
 function iRow(i,mini){
@@ -621,12 +655,92 @@ function iRow(i,mini){
 }
 function rI(id,list,mini){const e=document.getElementById(id);if(!e)return;if(!list.length){e.innerHTML='<div class="empty">İşlem bulunamadı</div>';return;}e.innerHTML=list.map(x=>iRow(x,mini)).join('');}
 
-function sRow(s,mini){
+function sabitAyKey(id,y,m){return id+'_'+y+'_'+m;}
+function isSabitPaid(id,y,m){return !!(D.sabitOdeme&&D.sabitOdeme[sabitAyKey(id,y,m)]);}
+
+function sRow(s,mini,y,m){
   const c=s.tur==='gelir'?'g':'a';
-  return`<div class="row"><div class="ri ${c}">${ICONS[s.kategori]||'📌'}</div><div class="rinfo"><div class="rtitle">${esc(s.aciklama)}</div><div class="rsub">${s.kategori} · Her ayın ${s.gun}. günü${s.not?' · '+esc(s.not):''}</div></div><span class="ramt ${c}">${s.tur==='gelir'?'+':'-'}${fmt(s.tutar)}</span>${mini?'':`<div class="rack"><button class="bico" onclick="delS('${s.id}')">✕</button></div>`}</div>`;
+  const paid=mini?isSabitPaid(s.id,y||CM.y,m!==undefined?m:CM.m):false;
+  const tikBtn=mini?`<button class="stik ${paid?'paid':''}" onclick="toggleSabit('${s.id}')" title="${paid?'Ödendi — geri al':'Ödendi olarak işaretle'}">${paid?'✓':'·'}</button>`:'';
+  return`<div class="sabit-row ${paid&&mini?'paid':''}">
+    ${tikBtn}
+    <div class="ri ${c}">${ICONS[s.kategori]||'📌'}</div>
+    <div class="rinfo"><div class="rtitle">${esc(s.aciklama)}</div><div class="rsub">${s.kategori} · Her ayın ${s.gun}. günü${s.not?' · '+esc(s.not):''}</div></div>
+    <span class="ramt ${c}">${s.tur==='gelir'?'+':'-'}${fmt(s.tutar)}</span>
+    ${mini?'':`<div class="rack"><button class="bico" onclick="delS('${s.id}')">✕</button></div>`}
+  </div>`;
 }
-function rS(id,list,mini){const e=document.getElementById(id);if(!e)return;if(!list.length){e.innerHTML='<div class="empty">Sabit ödeme yok</div>';return;}e.innerHTML=list.map(x=>sRow(x,mini)).join('');}
-function rSF(id){const e=document.getElementById(id);if(!e)return;if(!D.sabitler.length){e.innerHTML='<div class="empty">Sabit ödeme yok</div>';return;}e.innerHTML='<div class="card">'+D.sabitler.map(s=>sRow(s,false)).join('')+'</div>';}
+function rS(id,list,mini){
+  const e=document.getElementById(id);if(!e)return;
+  if(!list.length){e.innerHTML='<div class="empty">Sabit ödeme yok</div>';return;}
+  e.innerHTML=list.map(x=>sRow(x,mini,CM.y,CM.m)).join('');
+}
+function rSF(id){
+  const e=document.getElementById(id);if(!e)return;
+  if(!D.sabitler.length){e.innerHTML='<div class="empty">Sabit ödeme yok</div>';return;}
+  e.innerHTML='<div class="card">'+D.sabitler.map(s=>sRow(s,false)).join('')+'</div>';
+}
+
+function rOzetKartlar(id){
+  const e=document.getElementById(id);if(!e)return;
+  if(!D.kartlar.length){e.innerHTML='<div class="empty">Kart yok</div>';return;}
+  const toplamLimit=D.kartlar.reduce((s,k)=>s+Number(k.limit_tutar),0);
+  const toplamBorc=D.kartlar.reduce((s,k)=>s+Number(k.borc),0);
+  const toplamMusait=toplamLimit-toplamBorc;
+  e.innerHTML=`
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:14px 18px;box-shadow:var(--shadow);margin-bottom:12px">
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:12px;text-align:center">
+        <div><div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--text3);margin-bottom:4px">Toplam Limit</div><div style="font-size:20px;font-weight:700;color:var(--blue)">${fmt(toplamLimit)}</div></div>
+        <div><div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--text3);margin-bottom:4px">Toplam Borç</div><div style="font-size:20px;font-weight:700;color:var(--red)">${fmt(toplamBorc)}</div></div>
+        <div><div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--text3);margin-bottom:4px">Müsait</div><div style="font-size:20px;font-weight:700;color:var(--green)">${fmt(toplamMusait)}</div></div>
+      </div>
+      <div class="pbar"><div class="pfill" style="width:${toplamLimit>0?Math.min(100,Math.round(toplamBorc/toplamLimit*100)):0}%;background:${toplamBorc/toplamLimit>0.7?'var(--red)':'var(--accent)'}"></div></div>
+    </div>
+    <div class="ozet-kartlar">${D.kartlar.map(k=>{
+      const limit=Number(k.limit_tutar),borc=Number(k.borc),musait=limit-borc;
+      const pct=limit>0?Math.min(100,Math.round(borc/limit*100)):0;
+      const barC=pct>80?'var(--red)':pct>50?'var(--amber)':'var(--green)';
+      return`<div class="ozet-kart">
+        <div class="ozet-kart-top"><span class="ozet-kart-name">${esc(k.banka)}</span><span class="ozet-kart-tur">${esc(k.tur||'Kredi Kartı')}${k.son_odeme_gunu?' · '+k.son_odeme_gunu+'. gün':''}</span></div>
+        <div class="ozet-kart-nums">
+          <div class="ozk-n"><div class="ozk-lbl">Limit</div><div class="ozk-val b">${fmt(limit)}</div></div>
+          <div class="ozk-n"><div class="ozk-lbl">Borç</div><div class="ozk-val r">${fmt(borc)}</div></div>
+          <div class="ozk-n"><div class="ozk-lbl">Müsait</div><div class="ozk-val g">${fmt(musait)}</div></div>
+        </div>
+        <div class="pbar"><div class="pfill" style="width:${pct}%;background:${barC}"></div></div>
+        <div style="font-size:11px;color:var(--text3);text-align:right">%${pct} dolu</div>
+      </div>`;
+    }).join('')}</div>`;
+}
+
+function rOzetKrediler(id){
+  const e=document.getElementById(id);if(!e)return;
+  if(!D.krediler.length){e.innerHTML='<div class="empty">Kredi yok</div>';return;}
+  const now=new Date(),curIdx=now.getFullYear()*12+now.getMonth();
+  e.innerHTML=D.krediler.map(kr=>{
+    const odenen=(kr.odenmisMi||[]).filter(Boolean).length;
+    const kalan=kr.sayi-odenen;
+    const aylik=Number(kr.taksit_tutar)||Number(kr.tutar)/kr.sayi;
+    const kalanBorc=kalan*aylik;
+    const pct=Math.round((odenen/kr.sayi)*100);
+    const[ty2,tm2]=kr.baslangic.split('-').map(Number);
+    const si=ty2*12+(tm2-1),ci=curIdx;
+    const buAyOdendi=kr.odenmisMi&&kr.odenmisMi[Math.max(0,ci-si)];
+    return`<div class="ozet-kredi">
+      <div class="ozet-kredi-top">
+        <div>
+          <div class="ozet-kredi-name">${esc(kr.banka)} <span style="font-size:11px;background:var(--amber-bg);color:var(--amber);padding:2px 8px;border-radius:100px;font-weight:600">${esc(kr.tur||'Kredi')}</span></div>
+          <div style="font-size:12px;color:var(--text2);margin-top:3px">Aylık ${fmt(aylik)} · ${odenen}/${kr.sayi} ödendi</div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:16px;font-weight:700;color:var(--red)">${fmt(kalanBorc)}</div>
+          <div style="font-size:11px;color:var(--text3)">kalan borç</div>
+        </div>
+      </div>
+      <div class="pbar"><div class="pfill" style="width:${pct}%;background:var(--amber)"></div></div>
+    </div>`;
+  }).join('');
+}
 
 function rTOzet(id,y,m){
   const e=document.getElementById(id);
@@ -711,6 +825,15 @@ async function toggleOde(id,idx){
   if(SB)try{await sbPatch('taksitler',id,{odenmis_mi:t.odenmisMi});}catch(e){}
 }
 
+
+
+async function toggleSabit(id){
+  const key=sabitAyKey(id,CM.y,CM.m);
+  if(!D.sabitOdeme)D.sabitOdeme={};
+  D.sabitOdeme[key]=!D.sabitOdeme[key];
+  saveLocal();render();
+  toast(D.sabitOdeme[key]?'Ödendi olarak işaretlendi ✓':'İşaret kaldırıldı');
+}
 
 // ── KARTLAR ────────────────────────────────────────────
 function showKartForm(){const w=document.getElementById('kart-form-wrap');w.style.display=w.style.display==='none'?'block':'none';}
