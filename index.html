@@ -1,0 +1,1437 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Finans">
+<meta name="theme-color" content="#1a1a1a">
+
+<title>Finans Takip</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Instrument+Serif:ital@0;1&display=swap');
+:root{
+  --bg:#f5f4f0;--bg2:#ffffff;--bg3:#f0efe9;--bg4:#e8e6de;
+  --border:rgba(0,0,0,0.07);--border2:rgba(0,0,0,0.13);
+  --text:#1a1a1a;--text2:#6b6b6b;--text3:#aaa;
+  --accent:#2563eb;--accent2:#3b82f6;
+  --green:#059669;--green-bg:#ecfdf5;--green-border:#a7f3d0;
+  --red:#dc2626;--red-bg:#fef2f2;--red-border:#fca5a5;
+  --amber:#d97706;--amber-bg:#fffbeb;--amber-border:#fcd34d;
+  --blue:#2563eb;--blue-bg:#eff6ff;--blue-border:#93c5fd;
+  --sidebar-w:240px;--r:14px;--r2:10px;--r3:8px;
+  --shadow:0 1px 3px rgba(0,0,0,.06),0 4px 16px rgba(0,0,0,.04);
+  --shadow2:0 2px 8px rgba(0,0,0,.08),0 8px 32px rgba(0,0,0,.06);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;-webkit-font-smoothing:antialiased}
+h1,h2,h3{font-family:'Plus Jakarta Sans',sans-serif}
+
+.app{display:flex;min-height:100vh}
+
+/* SIDEBAR */
+.sidebar{
+  width:var(--sidebar-w);flex-shrink:0;
+  background:var(--text);
+  display:flex;flex-direction:column;padding:0;
+  position:fixed;top:0;left:0;bottom:0;z-index:10;
+}
+.main{flex:1;margin-left:var(--sidebar-w);padding:36px 40px;max-width:1000px;min-height:100vh}
+
+.logo{
+  font-size:17px;font-weight:700;
+  padding:28px 24px 24px;
+  letter-spacing:-.3px;
+  border-bottom:1px solid rgba(255,255,255,0.08);
+  display:flex;align-items:center;gap:10px;
+  color:#fff;
+}
+.logo-icon{
+  width:32px;height:32px;background:var(--accent);
+  border-radius:8px;display:flex;align-items:center;justify-content:center;
+  font-size:16px;
+}
+
+.nav{padding:14px 12px;flex:1;display:flex;flex-direction:column;gap:2px}
+.nav-item{
+  display:flex;align-items:center;gap:10px;
+  padding:10px 12px;border-radius:var(--r3);
+  cursor:pointer;font-size:13.5px;font-weight:500;
+  color:rgba(255,255,255,0.55);
+  transition:all .15s;border:none;background:none;width:100%;text-align:left;
+}
+.nav-item:hover{background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.9)}
+.nav-item.active{background:rgba(255,255,255,0.12);color:#fff}
+.ni{font-size:15px;width:20px;text-align:center;flex-shrink:0;opacity:.8}
+.nav-item.active .ni{opacity:1}
+
+.sidebar-footer{padding:16px 20px;border-top:1px solid rgba(255,255,255,0.08);font-size:11px}
+.sync-row{display:flex;align-items:center;gap:7px}
+.sdot{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,0.2)}
+.sdot.ok{background:#34d399}.sdot.err{background:#f87171}.sdot.spin{background:#fbbf24;animation:blink 1s infinite}
+#slbl{color:rgba(255,255,255,0.4);font-size:11px}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+
+.panel{display:none;animation:fadeUp .2s ease}.panel.active{display:block}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+/* PAGE HEADER */
+.page-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:32px;gap:16px}
+.page-title{font-size:28px;font-weight:700;letter-spacing:-.6px;line-height:1.2}
+.page-sub{font-size:13px;color:var(--text2);margin-top:4px}
+
+.mnav{
+  display:flex;align-items:center;gap:10px;
+  background:var(--bg2);border:1px solid var(--border);
+  border-radius:var(--r2);padding:8px 16px;
+  box-shadow:var(--shadow);flex-shrink:0;
+}
+.mnav button{background:none;border:none;cursor:pointer;color:var(--text2);font-size:18px;padding:0 2px;transition:color .15s;line-height:1}
+.mnav button:hover{color:var(--text)}
+.mname{font-size:14px;font-weight:600;min-width:120px;text-align:center;color:var(--text)}
+
+/* STAT CARDS */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:32px}
+.stat{
+  background:var(--bg2);border:1px solid var(--border);
+  border-radius:var(--r);padding:20px 22px;
+  box-shadow:var(--shadow);position:relative;overflow:hidden;
+}
+.stat::before{content:'';position:absolute;top:0;left:0;bottom:0;width:3px;border-radius:3px 0 0 3px}
+.stat.g::before{background:var(--green)}
+.stat.r::before{background:var(--red)}
+.stat.a::before{background:var(--amber)}
+.stat.b::before{background:var(--blue)}
+.slbl{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.7px;color:var(--text3);margin-bottom:10px}
+.sval{font-size:24px;font-weight:700;letter-spacing:-.5px;color:var(--text)}
+.sval.g{color:var(--green)}.sval.r{color:var(--red)}.sval.a{color:var(--amber)}
+
+/* SECTIONS */
+.sec{margin-bottom:32px}
+.sec-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.sec-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--text3)}
+
+/* CARD */
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;box-shadow:var(--shadow)}
+
+/* ROWS */
+.row{display:flex;align-items:center;gap:14px;padding:13px 18px;border-bottom:1px solid var(--border);transition:background .1s}
+.row:last-child{border-bottom:none}.row:hover{background:var(--bg3)}
+.ri{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0}
+.ri.g{background:var(--green-bg)}.ri.r{background:var(--red-bg)}.ri.b{background:var(--blue-bg)}.ri.a{background:var(--amber-bg)}
+.rinfo{flex:1;min-width:0}
+.rtitle{font-size:14px;font-weight:600;color:var(--text)}
+.rsub{font-size:12px;color:var(--text2);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ramt{font-size:14px;font-weight:700;white-space:nowrap;letter-spacing:-.3px}
+.ramt.g{color:var(--green)}.ramt.r{color:var(--red)}.ramt.a{color:var(--amber)}
+.rack{display:flex;gap:6px}
+.bico{width:28px;height:28px;border-radius:6px;border:1px solid var(--border);background:none;cursor:pointer;color:var(--text3);display:flex;align-items:center;justify-content:center;font-size:12px;transition:all .15s}
+.bico:hover{background:var(--red-bg);border-color:var(--red-border);color:var(--red)}
+
+.empty{padding:36px;text-align:center;color:var(--text3);font-size:13px}
+
+/* BADGE */
+.badge{display:inline-flex;align-items:center;font-size:10px;font-weight:700;padding:2px 8px;border-radius:100px;letter-spacing:.3px;margin-left:8px}
+.badge.b{background:var(--blue-bg);color:var(--blue);border:1px solid var(--blue-border)}
+.badge.g{background:var(--green-bg);color:var(--green);border:1px solid var(--green-border)}
+
+/* TAKSIT CARD */
+.tcard{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:18px 20px;margin-bottom:14px;box-shadow:var(--shadow);transition:box-shadow .15s}
+.tcard:hover{box-shadow:var(--shadow2)}
+.thead2{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+.tmeta{flex:1}
+.tname{font-size:15px;font-weight:600;display:flex;align-items:center;color:var(--text)}
+.tsub{font-size:12px;color:var(--text2);margin-top:4px}
+.tamt{font-size:16px;font-weight:700;letter-spacing:-.4px;color:var(--text)}
+.pbar{height:4px;background:var(--bg4);border-radius:100px;overflow:hidden;margin-bottom:14px}
+.pfill{height:100%;border-radius:100px;transition:width .5s cubic-bezier(.4,0,.2,1)}
+
+/* MONTH BUTTONS */
+.mgrid{display:flex;flex-wrap:wrap;gap:7px}
+.mb{
+  width:46px;height:46px;border-radius:var(--r3);
+  border:1.5px solid var(--border);background:var(--bg3);
+  cursor:pointer;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:1px;
+  transition:all .15s;
+}
+.mb:hover{border-color:var(--border2);background:var(--bg4);transform:translateY(-1px)}
+.mb.paid{background:var(--green-bg);border-color:var(--green-border)}
+.mb.paid .mn{color:var(--green)}.mb.paid .ml{color:var(--green);opacity:.7}
+.mb.cur{border-color:var(--accent);background:var(--blue-bg)}
+.mb.cur .mn{color:var(--accent)}
+.mb.fut{opacity:.3;cursor:default}
+.mb.fut:hover{transform:none}
+.mn{font-size:13px;font-weight:700;color:var(--text)}
+.ml{font-size:9px;color:var(--text3);font-weight:500}
+
+/* FORM */
+.fcard{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:24px;margin-bottom:16px;box-shadow:var(--shadow)}
+.ttabs{display:flex;gap:6px;margin-bottom:24px;background:var(--bg3);padding:5px;border-radius:var(--r2)}
+.ttab{
+  padding:8px 18px;border-radius:var(--r3);
+  border:none;background:none;cursor:pointer;color:var(--text2);
+  font-size:13px;font-weight:600;font-family:'Plus Jakarta Sans',sans-serif;
+  transition:all .15s;flex:1;
+}
+.ttab:hover{color:var(--text)}
+.ttab.active{background:var(--bg2);color:var(--text);box-shadow:var(--shadow)}
+
+.fgrid{display:grid;gap:14px}.g2{grid-template-columns:1fr 1fr}.g3{grid-template-columns:1fr 1fr 1fr}
+.fg{display:flex;flex-direction:column;gap:6px}
+.fg label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--text3)}
+input,select{
+  background:var(--bg3);border:1.5px solid var(--border);
+  border-radius:var(--r3);padding:10px 13px;
+  color:var(--text);font-size:14px;font-weight:500;
+  font-family:'Plus Jakarta Sans',sans-serif;width:100%;
+  transition:border-color .15s,box-shadow .15s;
+}
+input:focus,select:focus{
+  outline:none;border-color:var(--accent);
+  box-shadow:0 0 0 3px rgba(37,99,235,.1);
+  background:var(--bg2);
+}
+input::placeholder{color:var(--text3)}
+select option{background:var(--bg2)}
+.btn{
+  background:var(--accent);border:none;border-radius:var(--r3);
+  padding:11px 24px;color:#fff;font-size:14px;font-weight:600;
+  font-family:'Plus Jakarta Sans',sans-serif;cursor:pointer;
+  transition:all .15s;box-shadow:0 2px 8px rgba(37,99,235,.3);
+}
+.btn:hover{background:#1d4ed8;transform:translateY(-1px);box-shadow:0 4px 12px rgba(37,99,235,.4)}
+.btn:active{transform:none}
+.fsub{display:none}.fsub.active{display:block}
+
+/* TOAST */
+.toast{
+  position:fixed;bottom:24px;right:24px;
+  background:var(--text);color:#fff;
+  padding:12px 20px;border-radius:var(--r2);
+  font-size:13px;font-weight:500;
+  opacity:0;transform:translateY(8px);
+  transition:all .2s;pointer-events:none;z-index:999;
+  box-shadow:var(--shadow2);
+}
+.toast.show{opacity:1;transform:none}
+
+/* MODAL */
+.mbg{position:fixed;inset:0;background:rgba(0,0,0,.5);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;z-index:100;padding:20px}
+.mbg.hidden{display:none}
+.modal{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:32px;max-width:520px;width:100%;box-shadow:var(--shadow2)}
+.modal h2{font-size:22px;font-weight:700;margin-bottom:8px}
+.modal p{font-size:13px;color:var(--text2);margin-bottom:20px;line-height:1.7}
+.steps{background:var(--bg3);border-radius:var(--r2);padding:16px 18px;margin-bottom:20px;border:1px solid var(--border)}
+.steps ol{padding-left:16px;display:flex;flex-direction:column;gap:10px}
+.steps li{font-size:12px;color:var(--text2);line-height:1.6}
+.steps a{color:var(--accent);text-decoration:none;font-weight:600}
+.sql{background:var(--bg);border-radius:6px;padding:12px;margin-top:8px;font-size:10.5px;color:#374151;line-height:1.8;font-family:monospace;border:1px solid var(--border);overflow-x:auto;white-space:pre}
+.mfg{display:flex;flex-direction:column;gap:12px;margin-bottom:18px}
+.mfg label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--text3)}
+.skip{background:none;border:1.5px solid var(--border);color:var(--text2);padding:10px 18px;border-radius:var(--r3);font-size:13px;font-weight:600;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;margin-left:10px;transition:all .15s}
+.skip:hover{background:var(--bg3);color:var(--text);border-color:var(--border2)}
+
+@media(max-width:768px){
+  .sidebar{display:none!important}
+  .main{
+    margin-left:0!important;
+    padding:12px 12px 84px 12px!important;
+    max-width:100%!important;
+    width:100%!important;
+  }
+  body{overflow-x:hidden}
+  .stats{grid-template-columns:repeat(2,1fr)!important;gap:8px!important;margin-bottom:18px!important}
+  .stat{padding:12px 14px!important}
+  .sval{font-size:18px!important}
+  .slbl{font-size:10px!important}
+  .g3{grid-template-columns:1fr 1fr!important}
+  .g2{grid-template-columns:1fr!important}
+  .page-title{font-size:20px!important}
+  .page-sub{font-size:12px!important}
+  .page-header{margin-bottom:16px!important;flex-wrap:wrap!important;gap:8px!important}
+  .mnav{padding:6px 10px!important}
+  .mname{min-width:80px!important;font-size:13px!important}
+  .kart-grid{grid-template-columns:1fr!important}
+  .ozet-kartlar{grid-template-columns:1fr!important}
+  .kart-actions{flex-wrap:wrap!important;gap:6px!important}
+  .kart-ode-inp{width:100%!important}
+  .kart-limits{gap:6px!important}
+  .fcard{padding:14px!important}
+  .ttabs{gap:3px!important;padding:4px!important}
+  .ttab{padding:8px 6px!important;font-size:12px!important;flex:1!important}
+  .edit-modal{padding:18px!important;max-width:100%!important}
+  .mb{width:38px!important;height:38px!important}
+  .mn{font-size:11px!important}
+  .ml{font-size:8px!important}
+  .row{padding:10px 12px!important}
+  .ri{width:32px!important;height:32px!important;font-size:14px!important}
+  .rtitle{font-size:13px!important}
+  .rsub{font-size:11px!important}
+  .ramt{font-size:13px!important}
+  .tcard{padding:14px!important}
+  .kredi-card{padding:14px!important}
+  .kart-card{padding:16px!important}
+  .sec-title{font-size:11px!important}
+  .sec{margin-bottom:20px!important}
+  .btn{padding:10px 18px!important;font-size:13px!important}
+  input,select{font-size:16px!important} /* prevent zoom on iOS */
+  .bottom-nav{display:flex!important}
+  .mgrid{gap:5px!important}
+  .ozet-kart-nums{gap:4px!important}
+  .kredi-stats{gap:8px!important}
+}
+@media(min-width:769px){
+  .bottom-nav{display:none!important}
+}
+
+@media(max-width:768px){
+  /* Toplam özet - stack vertically */
+  .ozet-kart-nums{grid-template-columns:1fr 1fr 1fr!important}
+  .ozk-val{font-size:11px!important;word-break:break-all}
+  
+  /* Kart limits - smaller font */
+  .kart-limits{grid-template-columns:1fr 1fr 1fr!important;gap:4px!important}
+  .kart-val{font-size:12px!important;word-break:break-word}
+  .kart-lbl{font-size:9px!important}
+  .kart-litem{padding:7px 6px!important}
+  
+  /* Toplam limit/borc section */
+  #ozet-kartlar [style*="grid-template-columns: repeat(3"]{
+    grid-template-columns:1fr!important;
+  }
+  
+  /* Kredi stats */
+  .kredi-stats{grid-template-columns:1fr 1fr 1fr!important}
+  .kredi-stat .kart-lbl{font-size:9px!important}
+  .kredi-stat [style*="font-size:15px"]{font-size:12px!important}
+  
+  /* Kart banka name */
+  .kart-banka{font-size:14px!important}
+  .kart-tur{font-size:10px!important}
+  
+  /* Genel büyük rakamlar */
+  .sval{font-size:16px!important;letter-spacing:-.5px}
+}
+
+
+/* BOTTOM NAV */
+.bottom-nav{
+  display:none;
+  position:fixed;bottom:0;left:0;right:0;
+  background:var(--text);
+  padding:8px 4px calc(8px + env(safe-area-inset-bottom, 0px));
+  z-index:50;
+  border-top:1px solid rgba(255,255,255,0.1);
+}
+.bn-inner{display:flex;justify-content:space-around;align-items:center;max-width:480px;margin:0 auto}
+.bn-item{display:flex;flex-direction:column;align-items:center;gap:3px;padding:4px 8px;cursor:pointer;border:none;background:none;color:rgba(255,255,255,0.45);transition:color .15s;min-width:48px}
+.bn-item.active{color:#fff}
+.bn-item .bn-icon{font-size:20px;line-height:1}
+.bn-item .bn-lbl{font-size:10px;font-weight:600;letter-spacing:.2px}
+.bn-plus{
+  width:46px;height:46px;border-radius:50%;
+  background:var(--accent);border:none;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  font-size:22px;color:#fff;margin-top:-16px;
+  box-shadow:0 4px 14px rgba(37,99,235,.5);
+  transition:transform .15s;
+}
+.bn-plus:active{transform:scale(.93)}
+::-webkit-scrollbar{width:5px}
+::-webkit-scrollbar-track{background:var(--bg3)}
+::-webkit-scrollbar-thumb{background:var(--bg4);border-radius:3px}
+
+/* KART CARDS */
+.kart-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px;margin-bottom:24px}
+.kart-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:20px;box-shadow:var(--shadow);position:relative;overflow:hidden;transition:box-shadow .15s}
+.kart-card:hover{box-shadow:var(--shadow2)}
+.kart-card::before{content:'';position:absolute;top:0;left:0;right:0;height:4px}
+.kart-card.visa::before{background:linear-gradient(90deg,#1a1f71,#f7b600)}
+.kart-card.master::before{background:linear-gradient(90deg,#eb001b,#f79e1b)}
+.kart-card.troy::before{background:linear-gradient(90deg,#00a0e9,#e63946)}
+.kart-card.other::before{background:linear-gradient(90deg,var(--accent),var(--accent2))}
+.kart-banka{font-size:16px;font-weight:700;margin-bottom:4px}
+.kart-tur{font-size:11px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:.5px;margin-bottom:16px}
+.kart-limits{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:16px}
+.kart-litem{background:var(--bg3);border-radius:var(--r3);padding:10px 12px}
+.kart-lbl{font-size:10px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
+.kart-val{font-size:15px;font-weight:700;letter-spacing:-.3px}
+.kart-val.red{color:var(--red)}.kart-val.green{color:var(--green)}.kart-val.blue{color:var(--blue)}
+.kart-pbar{height:5px;background:var(--bg4);border-radius:100px;overflow:hidden;margin-bottom:12px}
+.kart-pfill{height:100%;border-radius:100px;transition:width .4s}
+.kart-actions{display:flex;gap:8px;align-items:center}
+.kart-ode-inp{flex:1;padding:8px 12px;border:1.5px solid var(--border);border-radius:var(--r3);font-size:13px;font-weight:500;background:var(--bg3);color:var(--text);font-family:'Plus Jakarta Sans',sans-serif}
+.kart-ode-inp:focus{outline:none;border-color:var(--accent)}
+.btn-sm{padding:8px 14px;border-radius:var(--r3);border:none;background:var(--accent);color:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;white-space:nowrap}
+.btn-sm:hover{background:#1d4ed8}
+.btn-sm.red{background:var(--red)}.btn-sm.red:hover{background:#b91c1c}
+.btn-sm.outline{background:none;border:1.5px solid var(--border);color:var(--text2)}.btn-sm.outline:hover{background:var(--bg3);color:var(--text)}
+.kart-taksitler{margin-top:12px;border-top:1px solid var(--border);padding-top:12px}
+.kart-taksit-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--text3);margin-bottom:8px}
+
+/* KREDİ CARDS */
+.kredi-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:18px 20px;margin-bottom:14px;box-shadow:var(--shadow);transition:box-shadow .15s}
+.kredi-card:hover{box-shadow:var(--shadow2)}
+.kredi-header{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+.kredi-icon{width:40px;height:40px;border-radius:10px;background:var(--amber-bg);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.kredi-meta{flex:1}
+.kredi-name{font-size:15px;font-weight:600;display:flex;align-items:center;gap:8px}
+.kredi-sub{font-size:12px;color:var(--text2);margin-top:3px}
+.kredi-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px}
+.kredi-stat{background:var(--bg3);border-radius:var(--r3);padding:10px 12px}
+
+/* SABİT ÖDEME TİK */
+.sabit-row{display:flex;align-items:center;gap:12px;padding:13px 18px;border-bottom:1px solid var(--border);transition:background .1s}
+.sabit-row:last-child{border-bottom:none}
+.sabit-row:hover{background:var(--bg3)}
+.sabit-row.paid{background:var(--green-bg)}
+.stik{width:26px;height:26px;border-radius:50%;border:2px solid var(--border2);background:var(--bg3);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;transition:all .15s}
+.stik:hover{border-color:var(--green);background:var(--green-bg)}
+.stik.paid{background:var(--green);border-color:var(--green);color:#fff}
+.sabit-row.paid .rtitle{text-decoration:line-through;color:var(--text2)}
+
+/* ÖZET KARTLAR */
+.ozet-kartlar{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;margin-bottom:8px}
+.ozet-kart{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:14px 16px;box-shadow:var(--shadow)}
+.ozet-kart-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.ozet-kart-name{font-size:14px;font-weight:700}
+.ozet-kart-tur{font-size:11px;color:var(--text3);font-weight:600}
+.ozet-kart-nums{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:8px}
+.ozk-n{text-align:center}
+.ozk-lbl{font-size:10px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:.4px}
+.ozk-val{font-size:13px;font-weight:700;margin-top:2px}
+.ozk-val.r{color:var(--red)}.ozk-val.g{color:var(--green)}.ozk-val.b{color:var(--blue)}
+
+/* ÖZET KREDİ */
+.ozet-kredi{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:12px 16px;box-shadow:var(--shadow);margin-bottom:8px}
+.ozet-kredi-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.ozet-kredi-name{font-size:14px;font-weight:700}
+
+/* EDIT MODAL */
+.edit-modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.5);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;z-index:200;padding:20px}
+.edit-modal-bg.hidden{display:none}
+.edit-modal{background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r);padding:28px;max-width:480px;width:100%;box-shadow:var(--shadow2);max-height:90vh;overflow-y:auto}
+.edit-modal h3{font-size:18px;font-weight:700;margin-bottom:20px}
+.edit-actions{display:flex;gap:8px;margin-top:18px}
+.bico.edit{background:var(--bg3);border-color:var(--border2)}
+.bico.edit:hover{background:var(--blue-bg);border-color:var(--blue-border);color:var(--blue)}
+</style>
+
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon.png">
+</head>
+<body>
+
+<!-- SETUP MODAL -->
+<div class="mbg hidden" id="setup-modal">
+  <div class="modal">
+    <h2>⚡ Supabase Kurulumu</h2>
+    <p>Verilerin bulutta saklanması ve her cihazdan erişilebilmesi için Supabase bilgilerini gir. Tamamen ücretsiz, 5 dakikada kurulum.</p>
+    <div class="steps">
+      <ol>
+        <li><a href="https://supabase.com" target="_blank">supabase.com</a> → New Project oluştur (ücretsiz)</li>
+        <li>Sol menü → <strong>SQL Editor</strong> → aşağıdaki kodu yapıştır ve çalıştır:
+          <div class="sql">create table if not exists islemler (id text primary key, tarih text, tutar numeric, tur text, aciklama text, kategori text);
+create table if not exists sabitler (id text primary key, gun int, tutar numeric, tur text, aciklama text, kategori text, "not" text);
+create table if not exists taksitler (id text primary key, tutar numeric, sayi int, tur text, aciklama text, kart text, baslangic text, odenmis_mi jsonb);
+alter table islemler enable row level security;
+alter table sabitler enable row level security;
+alter table taksitler enable row level security;
+create policy "anon_all" on islemler for all using (true) with check (true);
+create policy "anon_all" on sabitler for all using (true) with check (true);
+create policy "anon_all" on taksitler for all using (true) with check (true);</div>
+        </li>
+        <li>Project Settings → API → <strong>Project URL</strong> ve <strong>anon public key</strong> kopyala</li>
+      </ol>
+    </div>
+    <div class="mfg">
+      <div class="fg"><label>Project URL</label><input id="sb-url" placeholder="https://xyzabcde.supabase.co"></div>
+      <div class="fg"><label>Anon Key (public)</label><input id="sb-key" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."></div>
+    </div>
+    <div style="display:flex;align-items:center">
+      <button class="btn" onclick="initSupabase()">Bağlan</button>
+      <button class="skip" onclick="skipSupabase()">Şimdilik atla (local)</button>
+    </div>
+  </div>
+</div>
+
+<div class="app">
+  <aside class="sidebar">
+    <div class="logo"><span class="logo-icon">💰</span> Finans Takip</div>
+    <nav class="nav">
+      <button class="nav-item active" onclick="showTab('ozet',this)"><span class="ni">◈</span> Özet</button>
+      <button class="nav-item" onclick="showTab('islemler',this)"><span class="ni">↕</span> İşlemler</button>
+      <button class="nav-item" onclick="showTab('sabit',this)"><span class="ni">⟳</span> Sabit Ödemeler</button>
+      <button class="nav-item" onclick="showTab('taksitler',this)"><span class="ni">▦</span> Taksitler</button>
+      <button class="nav-item" onclick="showTab('kartlar',this)"><span class="ni">💳</span> Kartlar</button>
+      <button class="nav-item" onclick="showTab('krediler',this)"><span class="ni">🏦</span> Krediler</button>
+      <button class="nav-item" onclick="showTab('ekle',this)"><span class="ni">+</span> Yeni Ekle</button>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="sync-row">
+        <div class="sdot" id="sdot"></div>
+        <span id="slbl">Local</span>
+      </div>
+    </div>
+  </aside>
+
+  <main class="main">
+    <!-- ÖZET -->
+    <div id="panel-ozet" class="panel active">
+      <div class="page-header">
+        <div><h1 class="page-title">Özet</h1><p class="page-sub" id="sub-ozet"></p></div>
+        <div class="mnav"><button onclick="changeMonth(-1)">&#8592;</button><span class="mname" id="ml1"></span><button onclick="changeMonth(1)">&#8594;</button></div>
+      </div>
+      <div class="stats">
+        <div class="stat g"><div class="slbl">Toplam Gelir</div><div class="sval g" id="sg">₺0</div></div>
+        <div class="stat r"><div class="slbl">Toplam Gider</div><div class="sval r" id="sd">₺0</div></div>
+        <div class="stat a"><div class="slbl">Sabit Giderler</div><div class="sval a" id="ss">₺0</div></div>
+        <div class="stat b"><div class="slbl">Net Bakiye</div><div class="sval" id="sn">₺0</div></div>
+      </div>
+
+      <!-- GELİR DÖKÜMÜ -->
+      <div class="sec">
+        <div class="sec-head"><span class="sec-title">📈 Gelir Dökümü</span></div>
+        <div class="card" id="ozet-gelir-dokum"><div class="empty">Gelir yok</div></div>
+      </div>
+
+      <div class="sec"><div class="sec-head"><span class="sec-title">Bu ay işlemler</span></div><div class="card" id="oi"><div class="empty">İşlem yok</div></div></div>
+      <div class="sec"><div class="sec-head"><span class="sec-title">Sabit ödemeler — bu ay</span></div><div class="card" id="os"><div class="empty">Sabit ödeme yok</div></div></div>
+      <div class="sec"><div class="sec-head"><span class="sec-title">Bu ay taksitler</span></div><div id="ot"><div class="empty">Taksit yok</div></div></div>
+      <div class="sec"><div class="sec-head"><span class="sec-title">Kredi kartları</span></div><div id="ozet-kartlar"><div class="empty">Kart yok</div></div></div>
+      <div class="sec"><div class="sec-head"><span class="sec-title">Krediler</span></div><div id="ozet-krediler"><div class="empty">Kredi yok</div></div></div>
+    </div>
+
+    <!-- İŞLEMLER -->
+    <div id="panel-islemler" class="panel">
+      <div class="page-header">
+        <div><h1 class="page-title">İşlemler</h1></div>
+        <div class="mnav"><button onclick="changeMonth(-1)">&#8592;</button><span class="mname" id="ml2"></span><button onclick="changeMonth(1)">&#8594;</button></div>
+      </div>
+      <div class="card" id="il"><div class="empty">İşlem bulunamadı</div></div>
+    </div>
+
+    <!-- SABİT -->
+    <div id="panel-sabit" class="panel">
+      <div class="page-header">
+        <div><h1 class="page-title">Sabit Ödemeler</h1><p class="page-sub" id="sabit-ay-sub">Her ay tekrar eden gelir ve giderler</p></div>
+        <div class="mnav"><button onclick="changeMonth(-1)">&#8592;</button><span class="mname" id="ml-sabit"></span><button onclick="changeMonth(1)">&#8594;</button></div>
+      </div>
+      <div id="sl"><div class="empty">Sabit ödeme yok</div></div>
+    </div>
+
+    <!-- TAKSİTLER -->
+    <div id="panel-taksitler" class="panel">
+      <div class="page-header"><div><h1 class="page-title">Taksitler</h1><p class="page-sub">Ödenen aya tıklayarak işaretle</p></div></div>
+      <div id="tl"><div class="empty">Taksit yok</div></div>
+    </div>
+
+    <!-- EKLE -->
+    <div id="panel-ekle" class="panel">
+      <div class="page-header"><div><h1 class="page-title">Yeni Ekle</h1></div></div>
+      <div class="fcard">
+        <div class="ttabs">
+          <button class="ttab active" id="ty-islem" onclick="selType('islem')">Tek Seferlik</button>
+          <button class="ttab" id="ty-sabit" onclick="selType('sabit')">Sabit Aylık</button>
+          <button class="ttab" id="ty-taksit" onclick="selType('taksit')">Taksitli</button>
+        </div>
+        <!-- TEK SEFERLİK -->
+        <div class="fsub active" id="form-islem">
+          <div class="fgrid g3">
+            <div class="fg"><label>Tarih</label><input type="date" id="i-t"></div>
+            <div class="fg"><label>Tutar (₺)</label><input type="number" id="i-tu" placeholder="0.00"></div>
+            <div class="fg"><label>Tür</label><select id="i-tur"><option value="gider">Gider</option><option value="gelir">Gelir</option></select></div>
+          </div>
+          <div class="fgrid g2" style="margin-top:12px">
+            <div class="fg"><label>Açıklama</label><input type="text" id="i-a" placeholder="Örn: Market alışverişi"></div>
+            <div class="fg"><label>Kategori</label><select id="i-k"><option>Market</option><option>Restoran</option><option>Ulaşım</option><option>Sağlık</option><option>Giyim</option><option>Eğlence</option><option>Fatura</option><option>Diğer</option><option>Maaş</option><option>Kira Geliri</option><option>Diğer Gelir</option></select></div>
+          </div>
+          <button class="btn" onclick="ekleIslem()" style="margin-top:14px">Kaydet</button>
+        </div>
+        <!-- SABİT AYLIK -->
+        <div class="fsub" id="form-sabit">
+          <div class="fgrid g3">
+            <div class="fg"><label>Ödeme Günü</label><input type="number" id="s-g" min="1" max="31" placeholder="1–31"></div>
+            <div class="fg"><label>Tutar (₺)</label><input type="number" id="s-tu" placeholder="0.00"></div>
+            <div class="fg"><label>Tür</label><select id="s-tur"><option value="gider">Gider</option><option value="gelir">Gelir</option></select></div>
+          </div>
+          <div class="fgrid g2" style="margin-top:12px">
+            <div class="fg"><label>Açıklama</label><input type="text" id="s-a" placeholder="Örn: Bina aidatı"></div>
+            <div class="fg"><label>Kategori</label><select id="s-k"><option>Kira</option><option>Aidat</option><option>Elektrik</option><option>Su</option><option>Doğalgaz</option><option>İnternet</option><option>Telefon</option><option>Abonelik</option><option>Maaş</option><option>Diğer</option></select></div>
+          </div>
+          <div class="fgrid" style="grid-template-columns:1fr;margin-top:12px">
+            <div class="fg"><label>Adres / Notlar</label><input type="text" id="s-n" placeholder="Örn: Çifte Havuzlar Apt. No:5"></div>
+          </div>
+          <button class="btn" onclick="ekleSabit()" style="margin-top:14px">Kaydet</button>
+        </div>
+        <!-- TAKSİTLİ -->
+        <div class="fsub" id="form-taksit">
+          <div class="fgrid g3">
+            <div class="fg"><label>Toplam Tutar (₺)</label><input type="number" id="t-tu" placeholder="0.00"></div>
+            <div class="fg"><label>Taksit Sayısı</label><input type="number" id="t-s" min="2" max="60" placeholder="9"></div>
+            <div class="fg"><label>Tür</label><select id="t-tur"><option value="gider">Kart Borcu</option><option value="gelir">Alacak</option></select></div>
+          </div>
+          <div class="fgrid g2" style="margin-top:12px">
+            <div class="fg"><label>Açıklama</label><input type="text" id="t-a" placeholder="Örn: Laptop kart ödemesi"></div>
+            <div class="fg"><label>Kart / Kaynak</label><input type="text" id="t-k" placeholder="Örn: Yapı Kredi Bonus"></div>
+          </div>
+          <div class="fgrid g2" style="margin-top:12px">
+            <div class="fg"><label>Başlangıç Ayı</label><input type="month" id="t-ay"></div>
+          </div>
+          <button class="btn" onclick="ekleTaksit()" style="margin-top:14px">Kaydet</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- KARTLAR -->
+    <div id="panel-kartlar" class="panel">
+      <div class="page-header">
+        <div><h1 class="page-title">Kredi Kartları</h1><p class="page-sub">Limit, borç ve ödeme takibi</p></div>
+        <button class="btn" onclick="showKartForm()">+ Kart Ekle</button>
+      </div>
+      <div id="kart-form-wrap" style="display:none;margin-bottom:24px">
+        <div class="fcard">
+          <div class="fgrid g3">
+            <div class="fg"><label>Banka Adı</label><input type="text" id="k-banka" placeholder="Örn: Yapı Kredi"></div>
+            <div class="fg"><label>Kart Türü</label>
+              <select id="k-tur">
+                <option value="Kredi Kartı">Kredi Kartı</option>
+                <option value="Ek Hesap">Ek Hesap</option>
+              </select>
+            </div>
+            <div class="fg"><label>Kart Ağı</label>
+              <select id="k-ag">
+                <option value="visa">Visa</option>
+                <option value="master">Mastercard</option>
+                <option value="troy">Troy</option>
+                <option value="other">Diğer</option>
+              </select>
+            </div>
+          </div>
+          <div class="fgrid g3" style="margin-top:12px">
+            <div class="fg"><label>Toplam Limit (₺)</label><input type="number" id="k-limit" placeholder="0.00"></div>
+            <div class="fg"><label>Mevcut Borç (₺)</label><input type="number" id="k-borc" placeholder="0.00"></div>
+            <div class="fg"><label>Son Ödeme Günü</label><input type="number" id="k-sogun" min="1" max="31" placeholder="1-31"></div>
+          </div>
+          <div class="fgrid" style="grid-template-columns:1fr;margin-top:12px">
+            <div class="fg"><label>Notlar</label><input type="text" id="k-notlar" placeholder="Opsiyonel"></div>
+          </div>
+          <div style="display:flex;gap:8px;margin-top:14px">
+            <button class="btn" onclick="ekleKart()">Kaydet</button>
+            <button class="btn-sm outline" style="padding:10px 18px" onclick="document.getElementById('kart-form-wrap').style.display='none'">İptal</button>
+          </div>
+        </div>
+      </div>
+      <div id="kart-list"><div class="empty">Henüz kart eklenmemiş</div></div>
+    </div>
+
+    <!-- KREDİLER -->
+    <div id="panel-krediler" class="panel">
+      <div class="page-header">
+        <div><h1 class="page-title">Krediler</h1><p class="page-sub">Tüketici kredisi, avans ve taksitli çekimler</p></div>
+        <button class="btn" onclick="showKrediForm()">+ Kredi Ekle</button>
+      </div>
+      <div id="kredi-form-wrap" style="display:none;margin-bottom:24px">
+        <div class="fcard">
+          <div class="fgrid g3">
+            <div class="fg"><label>Banka / Kurum</label><input type="text" id="kr-banka" placeholder="Örn: Ziraat Bankası"></div>
+            <div class="fg"><label>Kredi Türü</label>
+              <select id="kr-tur">
+                <option value="Tüketici Kredisi">Tüketici Kredisi</option>
+                <option value="Taksitli Avans">Taksitli Avans</option>
+                <option value="Nakit Avans">Nakit Avans</option>
+                <option value="İhtiyaç Kredisi">İhtiyaç Kredisi</option>
+                <option value="Taşıt Kredisi">Taşıt Kredisi</option>
+                <option value="Konut Kredisi">Konut Kredisi</option>
+              </select>
+            </div>
+            <div class="fg"><label>Toplam Tutar (₺)</label><input type="number" id="kr-tutar" placeholder="0.00"></div>
+          </div>
+          <div class="fgrid g3" style="margin-top:12px">
+            <div class="fg"><label>Taksit Sayısı</label><input type="number" id="kr-sayi" min="1" max="360" placeholder="12"></div>
+            <div class="fg"><label>Aylık Taksit (₺)</label><input type="number" id="kr-taksit" placeholder="0.00"></div>
+            <div class="fg"><label>Başlangıç Ayı</label><input type="month" id="kr-baslangic"></div>
+          </div>
+          <div class="fgrid" style="grid-template-columns:1fr;margin-top:12px">
+            <div class="fg"><label>Notlar</label><input type="text" id="kr-notlar" placeholder="Opsiyonel"></div>
+          </div>
+          <div style="display:flex;gap:8px;margin-top:14px">
+            <button class="btn" onclick="ekleKredi()">Kaydet</button>
+            <button class="btn-sm outline" style="padding:10px 18px" onclick="document.getElementById('kredi-form-wrap').style.display='none'">İptal</button>
+          </div>
+        </div>
+      </div>
+      <div id="kredi-list"><div class="empty">Henüz kredi eklenmemiş</div></div>
+    </div>
+  </main>
+</div>
+
+<!-- EDIT MODAL -->
+<div class="edit-modal-bg hidden" id="edit-modal">
+  <div class="edit-modal">
+    <h3 id="edit-title">Düzenle</h3>
+    <div id="edit-body"></div>
+    <div class="edit-actions">
+      <button class="btn" onclick="saveEdit()">Kaydet</button>
+      <button class="btn-sm outline" style="padding:10px 18px" onclick="closeEdit()">İptal</button>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const LOCAL_KEY='finans_sb_v1', CFG_KEY='finans_sb_cfg';
+const AY=['Oca','Şub','Mar','Nis','May','Haz','Tem','Ağu','Eyl','Eki','Kas','Ara'];
+const AYLONG=['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'];
+const ICONS={Market:'🛒',Restoran:'🍽',Ulaşım:'🚗',Sağlık:'💊',Giyim:'👕',Eğlence:'🎬',Fatura:'📄',Kira:'🏠',Aidat:'🏢',Elektrik:'⚡',Su:'💧',Doğalgaz:'🔥',İnternet:'📡',Telefon:'📱',Abonelik:'📺',Maaş:'💰','Kira Geliri':'🏠','Diğer Gelir':'💵',Diğer:'📌'};
+
+let D={islemler:[],sabitler:[],taksitler:[],kartlar:[],krediler:[],sabitOdeme:{}};
+let CM={y:new Date().getFullYear(),m:new Date().getMonth()};
+let SB=null;
+
+function loadLocal(){try{const r=localStorage.getItem(LOCAL_KEY);if(r){const p=JSON.parse(r);D.islemler=p.islemler||[];D.sabitler=p.sabitler||[];D.taksitler=p.taksitler||[];D.kartlar=p.kartlar||[];D.krediler=p.krediler||[];D.sabitOdeme=p.sabitOdeme||{};}}catch(e){}}
+function saveLocal(){try{localStorage.setItem(LOCAL_KEY,JSON.stringify(D));}catch(e){}}
+
+// ── SUPABASE REST ──────────────────────────────────────
+function sbH(){return{'Content-Type':'application/json','apikey':SB.key,'Authorization':'Bearer '+SB.key,'Prefer':'return=minimal'};}
+async function sbGet(table){const r=await fetch(SB.url+'/rest/v1/'+table+'?select=*',{headers:sbH()});if(!r.ok)throw new Error(await r.text());return r.json();}
+async function sbPost(table,body){const r=await fetch(SB.url+'/rest/v1/'+table,{method:'POST',headers:sbH(),body:JSON.stringify(body)});if(!r.ok)throw new Error(await r.text());}
+async function sbPatch(table,id,body){const r=await fetch(SB.url+'/rest/v1/'+table+'?id=eq.'+id,{method:'PATCH',headers:sbH(),body:JSON.stringify(body)});if(!r.ok)throw new Error(await r.text());}
+async function sbDel(table,id){const r=await fetch(SB.url+'/rest/v1/'+table+'?id=eq.'+id,{method:'DELETE',headers:sbH()});if(!r.ok)throw new Error(await r.text());}
+
+async function loadFromSupabase(){
+  try{
+    setSS('spin','Yükleniyor...');
+    const[i,s,t,k,kr]=await Promise.all([sbGet('islemler'),sbGet('sabitler'),sbGet('taksitler'),sbGet('kartlar'),sbGet('krediler')]);
+    D.islemler=i||[];
+    D.sabitler=s||[];
+    D.taksitler=(t||[]).map(x=>({...x,odenmisMi:x.odenmis_mi||Array(x.sayi).fill(false)}));
+    D.kartlar=k||[];
+    D.krediler=(kr||[]).map(x=>({...x,odenmisMi:x.odenmis_mi||Array(x.sayi).fill(false)}));
+    saveLocal();setSS('ok','Supabase ✓');render();
+  }catch(e){setSS('err','Hata');toast('Supabase: '+String(e.message).slice(0,50));loadLocal();render();}
+}
+
+function initSupabase(){
+  const url=document.getElementById('sb-url').value.trim().replace(/\/$/,'');
+  const key=document.getElementById('sb-key').value.trim();
+  if(!url||!key){toast('URL ve Key gerekli');return;}
+  SB={url,key};localStorage.setItem(CFG_KEY,JSON.stringify(SB));
+  document.getElementById('setup-modal').classList.add('hidden');
+  loadFromSupabase();
+}
+function skipSupabase(){document.getElementById('setup-modal').classList.add('hidden');loadLocal();render();}
+function setSS(state,label){
+  const d=document.getElementById('sdot');
+  d.className='sdot'+(state==='ok'?' ok':state==='err'?' err':state==='spin'?' spin':'');
+  document.getElementById('slbl').textContent=label;
+}
+
+// ── HELPERS ────────────────────────────────────────────
+function fmt(n){return'₺'+Number(n).toLocaleString('tr-TR',{minimumFractionDigits:2,maximumFractionDigits:2});}
+function toast(msg){const e=document.getElementById('toast');e.textContent=msg;e.classList.add('show');setTimeout(()=>e.classList.remove('show'),2400);}
+function uid(){return Date.now()+'_'+Math.random().toString(36).slice(2,6);}
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+function showTab(name,el){
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  if(el)el.classList.add('active');
+  document.getElementById('panel-'+name).classList.add('active');
+  render();
+}
+function selType(t){
+  ['islem','sabit','taksit'].forEach(k=>{
+    document.getElementById('ty-'+k).classList.toggle('active',k===t);
+    document.getElementById('form-'+k).classList.toggle('active',k===t);
+  });
+}
+function changeMonth(d){CM.m+=d;if(CM.m<0){CM.m=11;CM.y--;}if(CM.m>11){CM.m=0;CM.y++;}render();}
+
+// ── RENDER ─────────────────────────────────────────────
+function render(){
+  const{y,m}=CM,lbl=AYLONG[m]+' '+y;
+  ['ml1','ml2','ml-sabit'].forEach(id=>{const e=document.getElementById(id);if(e)e.textContent=lbl;});
+  const sub=document.getElementById('sub-ozet');if(sub)sub.textContent=lbl+' dönemi';
+
+  const ayI=D.islemler.filter(i=>{const d=new Date(i.tarih);return d.getFullYear()===y&&d.getMonth()===m;});
+  const gelir=ayI.filter(i=>i.tur==='gelir').reduce((s,i)=>s+Number(i.tutar),0);
+  const gider=ayI.filter(i=>i.tur==='gider').reduce((s,i)=>s+Number(i.tutar),0);
+  const sbG=D.sabitler.filter(s=>s.tur==='gider').reduce((s,i)=>s+Number(i.tutar),0);
+  const sbGl=D.sabitler.filter(s=>s.tur==='gelir').reduce((s,i)=>s+Number(i.tutar),0);
+  let tG=0,tGl=0;
+  D.taksitler.forEach(t=>{
+    const[ty2,tm2]=t.baslangic.split('-').map(Number);
+    const si=ty2*12+(tm2-1),ci=y*12+m;
+    if(ci>=si&&ci<si+t.sayi){const p=Number(t.tutar)/t.sayi;if(t.tur==='gider')tG+=p;else tGl+=p;}
+  });
+  const totG=gelir+sbGl+tGl,totD=gider+sbG+tG,net=totG-totD;
+  document.getElementById('sg').textContent=fmt(totG);
+  document.getElementById('sd').textContent=fmt(totD);
+  document.getElementById('ss').textContent=fmt(sbG);
+  const sn=document.getElementById('sn');sn.textContent=fmt(net);sn.className='sval '+(net>=0?'g':'r');
+
+  const sorted=ayI.slice().sort((a,b)=>new Date(b.tarih)-new Date(a.tarih));
+  rI('oi',sorted,true);rI('il',sorted,false);
+  rGelirDokum('ozet-gelir-dokum',ayI,y,m);
+  rS('os',D.sabitler,true);rSF('sl');
+  rTOzet('ot',y,m);rTF('tl');
+  rKartlar('kart-list');
+  rKrediler('kredi-list');
+  rOzetKartlar('ozet-kartlar');
+  rOzetKrediler('ozet-krediler');
+}
+
+function iRow(i,mini){
+  const c=i.tur==='gelir'?'g':'r';
+  return`<div class="row"><div class="ri ${c}">${ICONS[i.kategori]||'📌'}</div><div class="rinfo"><div class="rtitle">${esc(i.aciklama)}</div><div class="rsub">${i.kategori} · ${new Date(i.tarih).toLocaleDateString('tr-TR')}</div></div><span class="ramt ${c}">${i.tur==='gelir'?'+':'-'}${fmt(i.tutar)}</span>${mini?'':`<div class="rack"><button class="bico edit" onclick="editIslem('${i.id}')">✎</button><button class="bico" onclick="delI('${i.id}')">✕</button></div>`}</div>`;
+}
+function rI(id,list,mini){const e=document.getElementById(id);if(!e)return;if(!list.length){e.innerHTML='<div class="empty">İşlem bulunamadı</div>';return;}e.innerHTML=list.map(x=>iRow(x,mini)).join('');}
+
+function sabitAyKey(id,y,m){return id+'_'+y+'_'+m;}
+function isSabitPaid(id,y,m){return !!(D.sabitOdeme&&D.sabitOdeme[sabitAyKey(id,y,m)]);}
+
+function sRow(s,mini,y,m){
+  const c=s.tur==='gelir'?'g':'a';
+  const paid=mini?isSabitPaid(s.id,y||CM.y,m!==undefined?m:CM.m):false;
+  const tikBtn=mini?`<button class="stik ${paid?'paid':''}" onclick="toggleSabit('${s.id}')" title="${paid?'Ödendi — geri al':'Ödendi olarak işaretle'}">${paid?'✓':'·'}</button>`:'';
+  return`<div class="sabit-row ${paid&&mini?'paid':''}">
+    ${tikBtn}
+    <div class="ri ${c}">${ICONS[s.kategori]||'📌'}</div>
+    <div class="rinfo"><div class="rtitle">${esc(s.aciklama)}</div><div class="rsub">${s.kategori} · Her ayın ${s.gun}. günü${s.not?' · '+esc(s.not):''}</div></div>
+    <span class="ramt ${c}">${s.tur==='gelir'?'+':'-'}${fmt(s.tutar)}</span>
+    ${mini?'':`<div class="rack"><button class="bico edit" onclick="editSabit('${s.id}')">✎</button><button class="bico" onclick="delS('${s.id}')">✕</button></div>`}
+  </div>`;
+}
+function rS(id,list,mini){
+  const e=document.getElementById(id);if(!e)return;
+  if(!list.length){e.innerHTML='<div class="empty">Sabit ödeme yok</div>';return;}
+  e.innerHTML=list.map(x=>sRow(x,mini,CM.y,CM.m)).join('');
+}
+function rSF(id){
+  const e=document.getElementById(id);if(!e)return;
+  if(!D.sabitler.length){e.innerHTML='<div class="empty">Sabit ödeme yok</div>';return;}
+  e.innerHTML='<div class="card">'+D.sabitler.map(s=>sRow(s,true,CM.y,CM.m)).join('')+'</div>';
+}
+
+
+function rGelirDokum(id, ayI, y, m) {
+  const e = document.getElementById(id); if(!e) return;
+
+  // Maaş/işlem gelirleri
+  const islemGelirleri = ayI.filter(i=>i.tur==='gelir');
+  const islemGelirToplam = islemGelirleri.reduce((s,i)=>s+Number(i.tutar),0);
+
+  // Sabit gelirler
+  const sabitGelirleri = D.sabitler.filter(s=>s.tur==='gelir');
+  const sabitGelirToplam = sabitGelirleri.reduce((s,i)=>s+Number(i.tutar),0);
+
+  // Taksit gelirleri (alacaklar)
+  const taksitGelirleri = [];
+  D.taksitler.forEach(t=>{
+    if(t.tur!=='gelir') return;
+    const[ty2,tm2]=t.baslangic.split('-').map(Number);
+    const si=ty2*12+(tm2-1),ci=y*12+m;
+    if(ci>=si && ci<si+t.sayi) taksitGelirleri.push({aciklama:t.aciklama, tutar:Number(t.tutar)/t.sayi});
+  });
+  const taksitGelirToplam = taksitGelirleri.reduce((s,i)=>s+i.tutar,0);
+
+  const genelToplam = islemGelirToplam + sabitGelirToplam + taksitGelirToplam;
+
+  if(genelToplam === 0) { e.innerHTML='<div class="empty">Bu ay gelir yok</div>'; return; }
+
+  let html = '';
+
+  // İşlem gelirleri
+  if(islemGelirleri.length) {
+    html += `<div style="padding:10px 16px;background:var(--green-bg);border-bottom:1px solid var(--border)">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <span style="font-size:12px;font-weight:700;color:var(--green);text-transform:uppercase;letter-spacing:.5px">💼 İşlem Gelirleri</span>
+        <span style="font-size:14px;font-weight:700;color:var(--green)">${fmt(islemGelirToplam)}</span>
+      </div>
+    </div>`;
+    islemGelirleri.forEach(i=>{
+      html += `<div class="row" style="padding-left:24px">
+        <div class="ri g" style="width:28px;height:28px;font-size:13px">${ICONS[i.kategori]||'💵'}</div>
+        <div class="rinfo"><div class="rtitle" style="font-size:13px">${esc(i.aciklama)}</div><div class="rsub">${i.kategori}</div></div>
+        <span class="ramt g">+${fmt(i.tutar)}</span>
+      </div>`;
+    });
+  }
+
+  // Sabit gelirler
+  if(sabitGelirleri.length) {
+    html += `<div style="padding:10px 16px;background:var(--green-bg);border-bottom:1px solid var(--border);border-top:2px solid var(--border)">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <span style="font-size:12px;font-weight:700;color:var(--green);text-transform:uppercase;letter-spacing:.5px">🔄 Sabit Gelirler</span>
+        <span style="font-size:14px;font-weight:700;color:var(--green)">${fmt(sabitGelirToplam)}</span>
+      </div>
+    </div>`;
+    sabitGelirleri.forEach(s=>{
+      html += `<div class="row" style="padding-left:24px">
+        <div class="ri g" style="width:28px;height:28px;font-size:13px">${ICONS[s.kategori]||'💵'}</div>
+        <div class="rinfo"><div class="rtitle" style="font-size:13px">${esc(s.aciklama)}</div><div class="rsub">Her ayın ${s.gun}. günü</div></div>
+        <span class="ramt g">+${fmt(s.tutar)}</span>
+      </div>`;
+    });
+  }
+
+  // Taksit gelirleri (alacaklar)
+  if(taksitGelirleri.length) {
+    html += `<div style="padding:10px 16px;background:var(--green-bg);border-bottom:1px solid var(--border);border-top:2px solid var(--border)">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <span style="font-size:12px;font-weight:700;color:var(--green);text-transform:uppercase;letter-spacing:.5px">🤝 Taksit Alacakları</span>
+        <span style="font-size:14px;font-weight:700;color:var(--green)">${fmt(taksitGelirToplam)}</span>
+      </div>
+    </div>`;
+    taksitGelirleri.forEach(t=>{
+      html += `<div class="row" style="padding-left:24px">
+        <div class="ri g" style="width:28px;height:28px;font-size:13px">🤝</div>
+        <div class="rinfo"><div class="rtitle" style="font-size:13px">${esc(t.aciklama)}</div><div class="rsub">Bu ay taksiti</div></div>
+        <span class="ramt g">+${fmt(t.tutar)}</span>
+      </div>`;
+    });
+  }
+
+  // Genel toplam
+  html += `<div style="padding:12px 16px;background:var(--bg3);border-top:2px solid var(--green-border);display:flex;justify-content:space-between;align-items:center">
+    <span style="font-size:13px;font-weight:700;color:var(--text)">TOPLAM GELİR</span>
+    <span style="font-size:18px;font-weight:800;color:var(--green)">${fmt(genelToplam)}</span>
+  </div>`;
+
+  e.innerHTML = html;
+}
+
+function rOzetKartlar(id){
+  const e=document.getElementById(id);if(!e)return;
+  if(!D.kartlar.length){e.innerHTML='<div class="empty">Kart yok</div>';return;}
+  const toplamLimit=D.kartlar.reduce((s,k)=>s+Number(k.limit_tutar),0);
+  const toplamBorc=D.kartlar.reduce((s,k)=>s+Number(k.borc),0);
+  const toplamMusait=toplamLimit-toplamBorc;
+  e.innerHTML=`
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;box-shadow:var(--shadow);margin-bottom:12px">
+      <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px">
+        <div style="flex:1;min-width:80px;background:var(--blue-bg);border-radius:8px;padding:10px 12px;text-align:center">
+          <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text3);margin-bottom:4px">Toplam Limit</div>
+          <div style="font-size:15px;font-weight:700;color:var(--blue);word-break:break-word">${fmt(toplamLimit)}</div>
+        </div>
+        <div style="flex:1;min-width:80px;background:var(--red-bg);border-radius:8px;padding:10px 12px;text-align:center">
+          <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text3);margin-bottom:4px">Toplam Borç</div>
+          <div style="font-size:15px;font-weight:700;color:var(--red);word-break:break-word">${fmt(toplamBorc)}</div>
+        </div>
+        <div style="flex:1;min-width:80px;background:var(--green-bg);border-radius:8px;padding:10px 12px;text-align:center">
+          <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text3);margin-bottom:4px">Müsait</div>
+          <div style="font-size:15px;font-weight:700;color:var(--green);word-break:break-word">${fmt(toplamMusait)}</div>
+        </div>
+      </div>
+      <div class="pbar"><div class="pfill" style="width:${toplamLimit>0?Math.min(100,Math.round(toplamBorc/toplamLimit*100)):0}%;background:${toplamBorc/toplamLimit>0.7?'var(--red)':'var(--accent)'}"></div></div>
+    </div>
+    <div class="ozet-kartlar">${D.kartlar.map(k=>{
+      const limit=Number(k.limit_tutar),borc=Number(k.borc),musait=limit-borc;
+      const pct=limit>0?Math.min(100,Math.round(borc/limit*100)):0;
+      const barC=pct>80?'var(--red)':pct>50?'var(--amber)':'var(--green)';
+      return`<div class="ozet-kart">
+        <div class="ozet-kart-top"><span class="ozet-kart-name">${esc(k.banka)}</span><span class="ozet-kart-tur">${esc(k.tur||'Kredi Kartı')}${k.son_odeme_gunu?' · '+k.son_odeme_gunu+'. gün':''}</span></div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px">
+          <div style="flex:1;min-width:70px;text-align:center"><div class="ozk-lbl">Limit</div><div class="ozk-val b" style="font-size:12px;word-break:break-word">${fmt(limit)}</div></div>
+          <div style="flex:1;min-width:70px;text-align:center"><div class="ozk-lbl">Borç</div><div class="ozk-val r" style="font-size:12px;word-break:break-word">${fmt(borc)}</div></div>
+          <div style="flex:1;min-width:70px;text-align:center"><div class="ozk-lbl">Müsait</div><div class="ozk-val g" style="font-size:12px;word-break:break-word">${fmt(musait)}</div></div>
+        </div>
+        <div class="pbar"><div class="pfill" style="width:${pct}%;background:${barC}"></div></div>
+        <div style="font-size:11px;color:var(--text3);text-align:right">%${pct} dolu</div>
+      </div>`;
+    }).join('')}</div>`;
+}
+
+function rOzetKrediler(id){
+  const e=document.getElementById(id);if(!e)return;
+  if(!D.krediler.length){e.innerHTML='<div class="empty">Kredi yok</div>';return;}
+  const now=new Date(),curIdx=now.getFullYear()*12+now.getMonth();
+  e.innerHTML=D.krediler.map(kr=>{
+    const odenen=(kr.odenmisMi||[]).filter(Boolean).length;
+    const kalan=kr.sayi-odenen;
+    const aylik=Number(kr.taksit_tutar)||Number(kr.tutar)/kr.sayi;
+    const kalanBorc=kalan*aylik;
+    const pct=Math.round((odenen/kr.sayi)*100);
+    const[ty2,tm2]=kr.baslangic.split('-').map(Number);
+    const si=ty2*12+(tm2-1),ci=curIdx;
+    const buAyOdendi=kr.odenmisMi&&kr.odenmisMi[Math.max(0,ci-si)];
+    return`<div class="ozet-kredi">
+      <div class="ozet-kredi-top">
+        <div>
+          <div class="ozet-kredi-name">${esc(kr.banka)} <span style="font-size:11px;background:var(--amber-bg);color:var(--amber);padding:2px 8px;border-radius:100px;font-weight:600">${esc(kr.tur||'Kredi')}</span></div>
+          <div style="font-size:12px;color:var(--text2);margin-top:3px">Aylık ${fmt(aylik)} · ${odenen}/${kr.sayi} ödendi</div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:16px;font-weight:700;color:var(--red)">${fmt(kalanBorc)}</div>
+          <div style="font-size:11px;color:var(--text3)">kalan borç</div>
+        </div>
+      </div>
+      <div class="pbar"><div class="pfill" style="width:${pct}%;background:var(--amber)"></div></div>
+    </div>`;
+  }).join('');
+}
+
+function rTOzet(id,y,m){
+  const e=document.getElementById(id);
+  const aktif=D.taksitler.filter(t=>{const[ty2,tm2]=t.baslangic.split('-').map(Number);const si=ty2*12+(tm2-1),ci=y*12+m;return ci>=si&&ci<si+t.sayi;});
+  if(!aktif.length){e.innerHTML='<div class="empty">Bu ay taksit yok</div>';return;}
+  e.innerHTML=aktif.map(t=>{
+    const[ty2,tm2]=t.baslangic.split('-').map(Number);
+    const si=ty2*12+(tm2-1),ci=y*12+m,k=ci-si;
+    const per=Number(t.tutar)/t.sayi;
+    const paid=t.odenmisMi&&t.odenmisMi[k];
+    const c=t.tur==='gelir'?'g':'b';
+    return`<div class="card" style="margin-bottom:10px"><div class="row"><div class="ri ${c}">${t.tur==='gelir'?'🤝':'💳'}</div><div class="rinfo"><div class="rtitle">${esc(t.aciklama)}<span class="badge ${paid?'g':'b'}">${k+1}/${t.sayi}</span></div><div class="rsub">${esc(t.kart||'')}</div></div><span class="ramt ${c}">${t.tur==='gelir'?'+':'-'}${fmt(per)}</span></div></div>`;
+  }).join('');
+}
+
+function rTF(id){
+  const e=document.getElementById(id);
+  if(!D.taksitler.length){e.innerHTML='<div class="empty">Taksit yok</div>';return;}
+  const now=new Date(),curIdx=now.getFullYear()*12+now.getMonth();
+  e.innerHTML=D.taksitler.map(t=>{
+    const[ty2,tm2]=t.baslangic.split('-').map(Number);
+    const si=ty2*12+(tm2-1);
+    const odenen=(t.odenmisMi||[]).filter(Boolean).length;
+    const kalan=t.sayi-odenen,per=Number(t.tutar)/t.sayi;
+    const pct=Math.round((odenen/t.sayi)*100);
+    const c=t.tur==='gelir'?'g':'b',pf=t.tur==='gelir'?'#2dd4a0':'#4fa3f7';
+    const months=Array.from({length:t.sayi},(_,i)=>{
+      const idx=si+i,my=Math.floor(idx/12),mm=idx%12;
+      const isPaid=t.odenmisMi&&t.odenmisMi[i];
+      const isCur=idx===curIdx,isFut=idx>curIdx;
+      let cls='mb';if(isPaid)cls+=' paid';else if(isCur)cls+=' cur';else if(isFut)cls+=' fut';
+      return`<button class="${cls}" onclick="toggleOde('${t.id}',${i})" title="${AYLONG[mm]} ${my}"><span class="mn">${i+1}</span><span class="ml">${AY[mm]}</span></button>`;
+    }).join('');
+    return`<div class="tcard"><div class="thead2"><div class="ri ${c}">${t.tur==='gelir'?'🤝':'💳'}</div><div class="tmeta"><div class="tname">${esc(t.aciklama)}<span class="badge ${c}">${odenen}/${t.sayi}</span></div><div class="tsub">${t.kart?esc(t.kart)+' · ':''}Aylık ${fmt(per)} · Kalan ${fmt(kalan*per)}</div></div><div class="tamt">${fmt(t.tutar)}</div><button class="bico" onclick="delT('${t.id}')">✕</button></div><div class="pbar"><div class="pfill" style="width:${pct}%;background:${pf}"></div></div><div class="mgrid">${months}</div></div>`;
+  }).join('');
+}
+
+// ── CRUD ───────────────────────────────────────────────
+async function ekleIslem(){
+  const tarih=document.getElementById('i-t').value,tutar=parseFloat(document.getElementById('i-tu').value);
+  const tur=document.getElementById('i-tur').value,aciklama=document.getElementById('i-a').value.trim();
+  const kategori=document.getElementById('i-k').value;
+  if(!tarih||!tutar||!aciklama){toast('Tüm alanları doldurun');return;}
+  const row={id:uid(),tarih,tutar,tur,aciklama,kategori};
+  D.islemler.push(row);saveLocal();render();
+  document.getElementById('i-a').value='';document.getElementById('i-tu').value='';
+  if(SB){try{await sbPost('islemler',row);toast('Kaydedildi ✓ (Supabase)');}catch(e){toast('Local kaydedildi. Sync hatası.');}}
+  else toast('Kaydedildi ✓');
+}
+async function ekleSabit(){
+  const gun=parseInt(document.getElementById('s-g').value),tutar=parseFloat(document.getElementById('s-tu').value);
+  const tur=document.getElementById('s-tur').value,aciklama=document.getElementById('s-a').value.trim();
+  const kategori=document.getElementById('s-k').value,not=document.getElementById('s-n').value.trim();
+  if(!gun||!tutar||!aciklama){toast('Tüm alanları doldurun');return;}
+  const row={id:uid(),gun,tutar,tur,aciklama,kategori,not};
+  D.sabitler.push(row);saveLocal();render();
+  document.getElementById('s-a').value='';document.getElementById('s-tu').value='';document.getElementById('s-n').value='';
+  if(SB){try{await sbPost('sabitler',row);toast('Kaydedildi ✓ (Supabase)');}catch(e){toast('Local kaydedildi.');}}
+  else toast('Kaydedildi ✓');
+}
+async function ekleTaksit(){
+  const tutar=parseFloat(document.getElementById('t-tu').value),sayi=parseInt(document.getElementById('t-s').value);
+  const tur=document.getElementById('t-tur').value,aciklama=document.getElementById('t-a').value.trim();
+  const kart=document.getElementById('t-k').value.trim(),baslangic=document.getElementById('t-ay').value;
+  if(!tutar||!sayi||!aciklama||!baslangic){toast('Tüm alanları doldurun');return;}
+  const odenmisMi=Array(sayi).fill(false);
+  const row={id:uid(),tutar,sayi,tur,aciklama,kart,baslangic,odenmisMi};
+  D.taksitler.push(row);saveLocal();render();
+  document.getElementById('t-a').value='';document.getElementById('t-tu').value='';document.getElementById('t-k').value='';
+  if(SB){try{await sbPost('taksitler',{id:row.id,tutar:row.tutar,sayi:row.sayi,tur:row.tur,aciklama:row.aciklama,kart:row.kart,baslangic:row.baslangic,odenmis_mi:odenmisMi});toast('Kaydedildi ✓ (Supabase)');}catch(e){toast('Local kaydedildi.');}}
+  else toast('Kaydedildi ✓');
+}
+async function delI(id){D.islemler=D.islemler.filter(i=>i.id!==id);saveLocal();render();toast('Silindi');if(SB)try{await sbDel('islemler',id);}catch(e){}}
+async function delS(id){D.sabitler=D.sabitler.filter(s=>s.id!==id);saveLocal();render();toast('Silindi');if(SB)try{await sbDel('sabitler',id);}catch(e){}}
+async function delT(id){D.taksitler=D.taksitler.filter(t=>t.id!==id);saveLocal();render();toast('Silindi');if(SB)try{await sbDel('taksitler',id);}catch(e){}}
+async function toggleOde(id,idx){
+  const t=D.taksitler.find(x=>x.id===id);if(!t)return;
+  if(!t.odenmisMi)t.odenmisMi=Array(t.sayi).fill(false);
+  t.odenmisMi[idx]=!t.odenmisMi[idx];
+  saveLocal();render();
+  toast(t.odenmisMi[idx]?`${idx+1}. taksit ödendi ✓`:`${idx+1}. taksit geri alındı`);
+  if(SB)try{await sbPatch('taksitler',id,{odenmis_mi:t.odenmisMi});}catch(e){}
+}
+
+
+
+async function toggleSabit(id){
+  const key=sabitAyKey(id,CM.y,CM.m);
+  if(!D.sabitOdeme)D.sabitOdeme={};
+  D.sabitOdeme[key]=!D.sabitOdeme[key];
+  saveLocal();render();
+  toast(D.sabitOdeme[key]?'Ödendi olarak işaretlendi ✓':'İşaret kaldırıldı');
+}
+
+// ── KARTLAR ────────────────────────────────────────────
+function showKartForm(){const w=document.getElementById('kart-form-wrap');w.style.display=w.style.display==='none'?'block':'none';}
+function showKrediForm(){const w=document.getElementById('kredi-form-wrap');w.style.display=w.style.display==='none'?'block':'none';}
+
+function rKartlar(id){
+  const e=document.getElementById(id);if(!e)return;
+  if(!D.kartlar.length){e.innerHTML='<div class="empty">Henüz kart eklenmemiş</div>';return;}
+  const now=new Date(),curIdx=now.getFullYear()*12+now.getMonth();
+  e.innerHTML='<div class="kart-grid">'+D.kartlar.map(k=>{
+    const limit=Number(k.limit_tutar),borc=Number(k.borc),musait=limit-borc;
+    const pct=limit>0?Math.min(100,Math.round((borc/limit)*100)):0;
+    const barColor=pct>80?'#dc2626':pct>50?'#d97706':'#059669';
+    const kartTaksitler=D.taksitler.filter(t=>t.kart&&t.kart.toLowerCase().includes(k.banka.toLowerCase()));
+    const kartTaksitHTML=kartTaksitler.length?`<div class="kart-taksitler">
+      <div class="kart-taksit-title">Bu karta bağlı taksitler</div>
+      ${kartTaksitler.map(t=>{
+        const[ty2,tm2]=t.baslangic.split('-').map(Number);
+        const si=ty2*12+(tm2-1),ci=curIdx;
+        const kalanSayi=t.sayi-Math.min(t.sayi,Math.max(0,ci-si));
+        const per=Number(t.tutar)/t.sayi;
+        return`<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--border);font-size:13px">
+          <span style="font-weight:500">${esc(t.aciklama)}</span>
+          <span style="color:var(--red);font-weight:600">${fmt(per)}/ay · ${kalanSayi} kalan</span>
+        </div>`;
+      }).join('')}
+    </div>`:'';
+    return`<div class="kart-card ${k.ag||'other'}">
+      <div class="kart-banka">${esc(k.banka)}</div>
+      <div class="kart-tur">${esc(k.tur||'Kredi Kartı')}${k.son_odeme_gunu?' · Son ödeme: '+k.son_odeme_gunu+'. gün':''}</div>
+      <div class="kart-limits" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px">
+        <div class="kart-litem" style="flex:1;min-width:70px"><div class="kart-lbl">Limit</div><div class="kart-val blue" style="word-break:break-word;font-size:13px">${fmt(limit)}</div></div>
+        <div class="kart-litem" style="flex:1;min-width:70px"><div class="kart-lbl">Borç</div><div class="kart-val red" style="word-break:break-word;font-size:13px">${fmt(borc)}</div></div>
+        <div class="kart-litem" style="flex:1;min-width:70px"><div class="kart-lbl">Müsait</div><div class="kart-val green" style="word-break:break-word;font-size:13px">${fmt(musait)}</div></div>
+      </div>
+      <div class="kart-pbar"><div class="kart-pfill" style="width:${pct}%;background:${barColor}"></div></div>
+      <div class="kart-actions">
+        <input class="kart-ode-inp" type="number" id="ode-${k.id}" placeholder="Ödeme tutarı gir...">
+        <button class="btn-sm" onclick="kartOde('${k.id}')">Öde</button>
+        <button class="btn-sm outline" onclick="editKart('${k.id}')" style="padding:8px 10px">✎</button>
+        <button class="btn-sm red" onclick="delKart('${k.id}')">✕</button>
+      </div>
+      ${kartTaksitHTML}
+    </div>`;
+  }).join('')+'</div>';
+}
+
+function rKrediler(id){
+  const e=document.getElementById(id);if(!e)return;
+  if(!D.krediler.length){e.innerHTML='<div class="empty">Henüz kredi eklenmemiş</div>';return;}
+  const now=new Date(),curIdx=now.getFullYear()*12+now.getMonth();
+  e.innerHTML=D.krediler.map(kr=>{
+    const[ty2,tm2]=kr.baslangic.split('-').map(Number);
+    const si=ty2*12+(tm2-1);
+    const odenen=(kr.odenmisMi||[]).filter(Boolean).length;
+    const kalan=kr.sayi-odenen;
+    const aylikTaksit=Number(kr.taksit_tutar)||Number(kr.tutar)/kr.sayi;
+    const kalanBorc=kalan*aylikTaksit;
+    const pct=Math.round((odenen/kr.sayi)*100);
+    const months=Array.from({length:kr.sayi},(_,i)=>{
+      const idx=si+i,mm=idx%12;
+      const isPaid=kr.odenmisMi&&kr.odenmisMi[i];
+      const isCur=idx===curIdx,isFut=idx>curIdx;
+      let cls='mb';if(isPaid)cls+=' paid';else if(isCur)cls+=' cur';else if(isFut)cls+=' fut';
+      return`<button class="${cls}" onclick="toggleKredi('${kr.id}',${i})" title="${AYLONG[mm]}"><span class="mn">${i+1}</span><span class="ml">${AY[mm]}</span></button>`;
+    }).join('');
+    const turIcons={'Tüketici Kredisi':'🏦','Taksitli Avans':'💳','Nakit Avans':'💵','İhtiyaç Kredisi':'🏦','Taşıt Kredisi':'🚗','Konut Kredisi':'🏠'};
+    return`<div class="kredi-card">
+      <div class="kredi-header">
+        <div class="kredi-icon">${turIcons[kr.tur]||'🏦'}</div>
+        <div class="kredi-meta">
+          <div class="kredi-name">${esc(kr.banka)} <span class="badge b" style="font-size:10px">${esc(kr.tur||'Kredi')}</span></div>
+          <div class="kredi-sub">Aylık ${fmt(aylikTaksit)} · ${odenen}/${kr.sayi} ödendi · Kalan ${fmt(kalanBorc)}</div>
+        </div>
+        <div style="font-size:16px;font-weight:700;letter-spacing:-.3px">${fmt(Number(kr.tutar))}</div>
+        <button class="bico edit" onclick="editKredi('${kr.id}')">✎</button><button class="bico" onclick="delKredi('${kr.id}')">✕</button>
+      </div>
+      <div class="kredi-stats">
+        <div class="kredi-stat"><div class="kart-lbl">Toplam</div><div style="font-size:15px;font-weight:700">${fmt(Number(kr.tutar))}</div></div>
+        <div class="kredi-stat"><div class="kart-lbl">Ödenen</div><div style="font-size:15px;font-weight:700;color:var(--green)">${fmt(odenen*aylikTaksit)}</div></div>
+        <div class="kredi-stat"><div class="kart-lbl">Kalan Borç</div><div style="font-size:15px;font-weight:700;color:var(--red)">${fmt(kalanBorc)}</div></div>
+      </div>
+      <div class="pbar"><div class="pfill" style="width:${pct}%;background:var(--amber)"></div></div>
+      <div class="mgrid">${months}</div>
+    </div>`;
+  }).join('');
+}
+
+async function ekleKart(){
+  const banka=document.getElementById('k-banka').value.trim();
+  const tur=document.getElementById('k-tur').value;
+  const ag=document.getElementById('k-ag').value;
+  const limit_tutar=parseFloat(document.getElementById('k-limit').value)||0;
+  const borc=parseFloat(document.getElementById('k-borc').value)||0;
+  const son_odeme_gunu=parseInt(document.getElementById('k-sogun').value)||0;
+  const notlar=document.getElementById('k-notlar').value.trim();
+  if(!banka){toast('Banka adı gerekli');return;}
+  const row={id:uid(),banka,tur,ag,limit_tutar,borc,son_odeme_gunu,notlar};
+  D.kartlar.push(row);saveLocal();render();
+  document.getElementById('kart-form-wrap').style.display='none';
+  ['k-banka','k-limit','k-borc','k-sogun','k-notlar'].forEach(x=>document.getElementById(x).value='');
+  if(SB){try{await sbPost('kartlar',row);toast('Kart kaydedildi ✓');}catch(e){toast('Local kaydedildi.');}}
+  else toast('Kart kaydedildi ✓');
+}
+
+async function kartOde(id){
+  const inp=document.getElementById('ode-'+id);
+  const tutar=parseFloat(inp.value);
+  if(!tutar||tutar<=0){toast('Geçerli bir tutar gir');return;}
+  const k=D.kartlar.find(x=>x.id===id);if(!k)return;
+  const yeniBorc=Math.max(0,Number(k.borc)-tutar);
+  k.borc=yeniBorc;
+  saveLocal();render();inp.value='';
+  toast(`${fmt(tutar)} ödendi ✓ · Yeni borç: ${fmt(yeniBorc)}`);
+  if(SB)try{await sbPatch('kartlar',id,{borc:yeniBorc});}catch(e){}
+}
+
+async function delKart(id){
+  D.kartlar=D.kartlar.filter(k=>k.id!==id);saveLocal();render();toast('Silindi');
+  if(SB)try{await sbDel('kartlar',id);}catch(e){}
+}
+
+async function ekleKredi(){
+  const banka=document.getElementById('kr-banka').value.trim();
+  const tur=document.getElementById('kr-tur').value;
+  const tutar=parseFloat(document.getElementById('kr-tutar').value);
+  const sayi=parseInt(document.getElementById('kr-sayi').value);
+  const taksit_tutar=parseFloat(document.getElementById('kr-taksit').value)||tutar/sayi;
+  const baslangic=document.getElementById('kr-baslangic').value;
+  const notlar=document.getElementById('kr-notlar').value.trim();
+  if(!banka||!tutar||!sayi||!baslangic){toast('Tüm zorunlu alanları doldurun');return;}
+  const odenmisMi=Array(sayi).fill(false);
+  const row={id:uid(),banka,tur,tutar,sayi,taksit_tutar,baslangic,notlar,odenmisMi};
+  D.krediler.push(row);saveLocal();render();
+  document.getElementById('kredi-form-wrap').style.display='none';
+  ['kr-banka','kr-tutar','kr-sayi','kr-taksit','kr-notlar'].forEach(x=>document.getElementById(x).value='');
+  if(SB){try{await sbPost('krediler',{id:row.id,banka:row.banka,tur:row.tur,tutar:row.tutar,sayi:row.sayi,taksit_tutar:row.taksit_tutar,baslangic:row.baslangic,notlar:row.notlar,odenmis_mi:odenmisMi});toast('Kredi kaydedildi ✓');}catch(e){toast('Local kaydedildi.');}}
+  else toast('Kredi kaydedildi ✓');
+}
+
+async function toggleKredi(id,idx){
+  const kr=D.krediler.find(x=>x.id===id);if(!kr)return;
+  if(!kr.odenmisMi)kr.odenmisMi=Array(kr.sayi).fill(false);
+  kr.odenmisMi[idx]=!kr.odenmisMi[idx];
+  saveLocal();render();
+  toast(kr.odenmisMi[idx]?`${idx+1}. taksit ödendi ✓`:`${idx+1}. taksit geri alındı`);
+  if(SB)try{await sbPatch('krediler',id,{odenmis_mi:kr.odenmisMi});}catch(e){}
+}
+
+async function delKredi(id){
+  D.krediler=D.krediler.filter(k=>k.id!==id);saveLocal();render();toast('Silindi');
+  if(SB)try{await sbDel('krediler',id);}catch(e){}
+}
+
+
+// ── EDIT ───────────────────────────────────────────────
+let editState={type:null,id:null};
+
+function closeEdit(){document.getElementById('edit-modal').classList.add('hidden');}
+
+function openEdit(title,bodyHTML,type,id){
+  editState={type,id};
+  document.getElementById('edit-title').textContent=title;
+  document.getElementById('edit-body').innerHTML=bodyHTML;
+  document.getElementById('edit-modal').classList.remove('hidden');
+}
+
+function editIslem(id){
+  const i=D.islemler.find(x=>x.id===id);if(!i)return;
+  openEdit('İşlem Düzenle',`
+    <div class="fgrid g3">
+      <div class="fg"><label>Tarih</label><input type="date" id="e-tarih" value="${i.tarih}"></div>
+      <div class="fg"><label>Tutar (₺)</label><input type="number" id="e-tutar" value="${i.tutar}"></div>
+      <div class="fg"><label>Tür</label><select id="e-tur"><option value="gider" ${i.tur==='gider'?'selected':''}>Gider</option><option value="gelir" ${i.tur==='gelir'?'selected':''}>Gelir</option></select></div>
+    </div>
+    <div class="fgrid g2" style="margin-top:12px">
+      <div class="fg"><label>Açıklama</label><input type="text" id="e-aciklama" value="${esc(i.aciklama)}"></div>
+      <div class="fg"><label>Kategori</label><select id="e-kategori"><option>Market</option><option>Restoran</option><option>Ulaşım</option><option>Sağlık</option><option>Giyim</option><option>Eğlence</option><option>Fatura</option><option>Diğer</option><option>Maaş</option><option>Kira Geliri</option><option>Diğer Gelir</option></select></div>
+    </div>
+  `,'islem',id);
+  setTimeout(()=>{document.getElementById('e-kategori').value=i.kategori;},10);
+}
+
+function editSabit(id){
+  const s=D.sabitler.find(x=>x.id===id);if(!s)return;
+  openEdit('Sabit Ödeme Düzenle',`
+    <div class="fgrid g3">
+      <div class="fg"><label>Ödeme Günü</label><input type="number" id="e-gun" value="${s.gun}" min="1" max="31"></div>
+      <div class="fg"><label>Tutar (₺)</label><input type="number" id="e-tutar" value="${s.tutar}"></div>
+      <div class="fg"><label>Tür</label><select id="e-tur"><option value="gider" ${s.tur==='gider'?'selected':''}>Gider</option><option value="gelir" ${s.tur==='gelir'?'selected':''}>Gelir</option></select></div>
+    </div>
+    <div class="fgrid g2" style="margin-top:12px">
+      <div class="fg"><label>Açıklama</label><input type="text" id="e-aciklama" value="${esc(s.aciklama)}"></div>
+      <div class="fg"><label>Kategori</label><select id="e-kategori"><option>Kira</option><option>Aidat</option><option>Elektrik</option><option>Su</option><option>Doğalgaz</option><option>İnternet</option><option>Telefon</option><option>Abonelik</option><option>Maaş</option><option>Diğer</option></select></div>
+    </div>
+    <div class="fgrid" style="grid-template-columns:1fr;margin-top:12px">
+      <div class="fg"><label>Adres / Notlar</label><input type="text" id="e-not" value="${esc(s.not||'')}"></div>
+    </div>
+  `,'sabit',id);
+  setTimeout(()=>{document.getElementById('e-kategori').value=s.kategori;},10);
+}
+
+function editTaksit(id){
+  const t=D.taksitler.find(x=>x.id===id);if(!t)return;
+  openEdit('Taksit Düzenle',`
+    <div class="fgrid g2">
+      <div class="fg"><label>Açıklama</label><input type="text" id="e-aciklama" value="${esc(t.aciklama)}"></div>
+      <div class="fg"><label>Kart / Kaynak</label><input type="text" id="e-kart" value="${esc(t.kart||'')}"></div>
+    </div>
+    <div class="fgrid g3" style="margin-top:12px">
+      <div class="fg"><label>Toplam Tutar</label><input type="number" id="e-tutar" value="${t.tutar}"></div>
+      <div class="fg"><label>Taksit Sayısı</label><input type="number" id="e-sayi" value="${t.sayi}"></div>
+      <div class="fg"><label>Başlangıç Ayı</label><input type="month" id="e-baslangic" value="${t.baslangic}"></div>
+    </div>
+  `,'taksit',id);
+}
+
+function editKart(id){
+  const k=D.kartlar.find(x=>x.id===id);if(!k)return;
+  openEdit('Kart Düzenle',`
+    <div class="fgrid g2">
+      <div class="fg"><label>Banka Adı</label><input type="text" id="e-banka" value="${esc(k.banka)}"></div>
+      <div class="fg"><label>Kart Türü</label><select id="e-tur"><option value="Kredi Kartı" ${k.tur==='Kredi Kartı'?'selected':''}>Kredi Kartı</option><option value="Ek Hesap" ${k.tur==='Ek Hesap'?'selected':''}>Ek Hesap</option></select></div>
+    </div>
+    <div class="fgrid g3" style="margin-top:12px">
+      <div class="fg"><label>Toplam Limit</label><input type="number" id="e-limit" value="${k.limit_tutar}"></div>
+      <div class="fg"><label>Mevcut Borç</label><input type="number" id="e-borc" value="${k.borc}"></div>
+      <div class="fg"><label>Son Ödeme Günü</label><input type="number" id="e-sogun" value="${k.son_odeme_gunu||''}" min="1" max="31"></div>
+    </div>
+    <div class="fgrid" style="grid-template-columns:1fr;margin-top:12px">
+      <div class="fg"><label>Notlar</label><input type="text" id="e-notlar" value="${esc(k.notlar||'')}"></div>
+    </div>
+  `,'kart',id);
+}
+
+function editKredi(id){
+  const kr=D.krediler.find(x=>x.id===id);if(!kr)return;
+  openEdit('Kredi Düzenle',`
+    <div class="fgrid g2">
+      <div class="fg"><label>Banka / Kurum</label><input type="text" id="e-banka" value="${esc(kr.banka)}"></div>
+      <div class="fg"><label>Kredi Türü</label><select id="e-krtur"><option value="Tüketici Kredisi" ${kr.tur==='Tüketici Kredisi'?'selected':''}>Tüketici Kredisi</option><option value="Taksitli Avans" ${kr.tur==='Taksitli Avans'?'selected':''}>Taksitli Avans</option><option value="Nakit Avans" ${kr.tur==='Nakit Avans'?'selected':''}>Nakit Avans</option><option value="İhtiyaç Kredisi" ${kr.tur==='İhtiyaç Kredisi'?'selected':''}>İhtiyaç Kredisi</option><option value="Taşıt Kredisi" ${kr.tur==='Taşıt Kredisi'?'selected':''}>Taşıt Kredisi</option><option value="Konut Kredisi" ${kr.tur==='Konut Kredisi'?'selected':''}>Konut Kredisi</option></select></div>
+    </div>
+    <div class="fgrid g3" style="margin-top:12px">
+      <div class="fg"><label>Toplam Tutar</label><input type="number" id="e-tutar" value="${kr.tutar}"></div>
+      <div class="fg"><label>Taksit Sayısı</label><input type="number" id="e-sayi" value="${kr.sayi}"></div>
+      <div class="fg"><label>Aylık Taksit</label><input type="number" id="e-taksit" value="${kr.taksit_tutar||''}"></div>
+    </div>
+  `,'kredi',id);
+}
+
+async function saveEdit(){
+  const{type,id}=editState;
+  const g=v=>document.getElementById(v)?document.getElementById(v).value:null;
+  if(type==='islem'){
+    const i=D.islemler.find(x=>x.id===id);if(!i)return;
+    i.tarih=g('e-tarih');i.tutar=parseFloat(g('e-tutar'));i.tur=g('e-tur');i.aciklama=g('e-aciklama');i.kategori=g('e-kategori');
+    saveLocal();render();closeEdit();toast('İşlem güncellendi ✓');
+    if(SB)try{await sbPatch('islemler',id,{tarih:i.tarih,tutar:i.tutar,tur:i.tur,aciklama:i.aciklama,kategori:i.kategori});}catch(e){}
+  } else if(type==='sabit'){
+    const s=D.sabitler.find(x=>x.id===id);if(!s)return;
+    s.gun=parseInt(g('e-gun'));s.tutar=parseFloat(g('e-tutar'));s.tur=g('e-tur');s.aciklama=g('e-aciklama');s.kategori=g('e-kategori');s.not=g('e-not')||'';
+    saveLocal();render();closeEdit();toast('Sabit ödeme güncellendi ✓');
+    if(SB)try{await sbPatch('sabitler',id,{gun:s.gun,tutar:s.tutar,tur:s.tur,aciklama:s.aciklama,kategori:s.kategori,not:s.not});}catch(e){}
+  } else if(type==='taksit'){
+    const t=D.taksitler.find(x=>x.id===id);if(!t)return;
+    t.aciklama=g('e-aciklama');t.kart=g('e-kart')||'';t.tutar=parseFloat(g('e-tutar'));t.baslangic=g('e-baslangic');
+    saveLocal();render();closeEdit();toast('Taksit güncellendi ✓');
+    if(SB)try{await sbPatch('taksitler',id,{aciklama:t.aciklama,kart:t.kart,tutar:t.tutar,baslangic:t.baslangic});}catch(e){}
+  } else if(type==='kart'){
+    const k=D.kartlar.find(x=>x.id===id);if(!k)return;
+    k.banka=g('e-banka');k.tur=g('e-tur');k.limit_tutar=parseFloat(g('e-limit'))||0;k.borc=parseFloat(g('e-borc'))||0;k.son_odeme_gunu=parseInt(g('e-sogun'))||0;k.notlar=g('e-notlar')||'';
+    saveLocal();render();closeEdit();toast('Kart güncellendi ✓');
+    if(SB)try{await sbPatch('kartlar',id,{banka:k.banka,tur:k.tur,limit_tutar:k.limit_tutar,borc:k.borc,son_odeme_gunu:k.son_odeme_gunu,notlar:k.notlar});}catch(e){}
+  } else if(type==='kredi'){
+    const kr=D.krediler.find(x=>x.id===id);if(!kr)return;
+    kr.banka=g('e-banka');kr.tur=g('e-krtur');kr.tutar=parseFloat(g('e-tutar'));kr.sayi=parseInt(g('e-sayi'));kr.taksit_tutar=parseFloat(g('e-taksit'))||kr.tutar/kr.sayi;
+    saveLocal();render();closeEdit();toast('Kredi güncellendi ✓');
+    if(SB)try{await sbPatch('krediler',id,{banka:kr.banka,tur:kr.tur,tutar:kr.tutar,sayi:kr.sayi,taksit_tutar:kr.taksit_tutar});}catch(e){}
+  }
+}
+
+
+// ── MOBİL NAV ──────────────────────────────────────────
+function showTabMobile(name){
+  // Update bottom nav active states
+  ['ozet','islemler','kartlar'].forEach(k=>{
+    const bn=document.getElementById('bn-'+k);
+    if(bn)bn.classList.toggle('active',k===name);
+  });
+  // deactivate diger
+  const bd=document.getElementById('bn-diger');
+  if(bd)bd.classList.toggle('active',['sabit','taksitler','krediler','ekle'].includes(name));
+  // Update sidebar nav too
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  const sideItem=document.querySelector(`.nav-item[onclick="showTab('${name}',this)"]`);
+  if(sideItem)sideItem.classList.add('active');
+  // Show panel
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('panel-'+name).classList.add('active');
+  // Scroll to top
+  window.scrollTo({top:0,behavior:'smooth'});
+  render();
+}
+function toggleMoreMenu(){
+  document.getElementById('more-menu').classList.toggle('hidden');
+}
+function closeMoreMenu(){
+  document.getElementById('more-menu').classList.add('hidden');
+}
+
+// ── INIT ───────────────────────────────────────────────
+SB={url:'https://nofztogikguiozxmzker.supabase.co',key:'sb_publishable_o_awlrLka8OMznASAJ029A_OAqndKPU'};
+document.getElementById('setup-modal').classList.add('hidden');
+document.getElementById('i-t').value=new Date().toISOString().split('T')[0];
+const nm=new Date();
+document.getElementById('t-ay').value=nm.getFullYear()+'-'+String(nm.getMonth()+1).padStart(2,'0');
+loadLocal();render();
+loadFromSupabase();
+window.addEventListener('beforeunload',saveLocal);
+
+</script>
+
+<!-- BOTTOM NAV (Mobile) -->
+<nav class="bottom-nav" id="bottom-nav">
+  <div class="bn-inner">
+    <button class="bn-item active" id="bn-ozet" onclick="showTabMobile('ozet')">
+      <span class="bn-icon">⊞</span>
+      <span class="bn-lbl">Özet</span>
+    </button>
+    <button class="bn-item" id="bn-islemler" onclick="showTabMobile('islemler')">
+      <span class="bn-icon">↕</span>
+      <span class="bn-lbl">İşlemler</span>
+    </button>
+    <button class="bn-plus" onclick="showTabMobile('ekle')">+</button>
+    <button class="bn-item" id="bn-kartlar" onclick="showTabMobile('kartlar')">
+      <span class="bn-icon">💳</span>
+      <span class="bn-lbl">Kartlar</span>
+    </button>
+    <button class="bn-item" id="bn-diger" onclick="toggleMoreMenu()">
+      <span class="bn-icon">⋯</span>
+      <span class="bn-lbl">Daha</span>
+    </button>
+  </div>
+</nav>
+
+<!-- MORE MENU (Mobile) -->
+<div class="edit-modal-bg hidden" id="more-menu" onclick="if(event.target===this)closeMoreMenu()">
+  <div class="edit-modal" style="position:absolute;bottom:80px;left:14px;right:14px;max-width:none;padding:16px;border-radius:var(--r)">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <button onclick="showTabMobile('sabit');closeMoreMenu()" style="display:flex;align-items:center;gap:10px;padding:14px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--r2);cursor:pointer;font-size:14px;font-weight:600;font-family:inherit;color:var(--text)">
+        <span style="font-size:20px">⟳</span> Sabit
+      </button>
+      <button onclick="showTabMobile('taksitler');closeMoreMenu()" style="display:flex;align-items:center;gap:10px;padding:14px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--r2);cursor:pointer;font-size:14px;font-weight:600;font-family:inherit;color:var(--text)">
+        <span style="font-size:20px">▦</span> Taksitler
+      </button>
+      <button onclick="showTabMobile('krediler');closeMoreMenu()" style="display:flex;align-items:center;gap:10px;padding:14px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--r2);cursor:pointer;font-size:14px;font-weight:600;font-family:inherit;color:var(--text)">
+        <span style="font-size:20px">🏦</span> Krediler
+      </button>
+      <button onclick="closeMoreMenu()" style="display:flex;align-items:center;gap:10px;padding:14px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--r2);cursor:pointer;font-size:14px;font-weight:600;font-family:inherit;color:var(--text2)">
+        <span style="font-size:20px">✕</span> Kapat
+      </button>
+    </div>
+  </div>
+</div>
+</body>
+</html>
