@@ -503,7 +503,7 @@ create policy "anon_all" on taksitler for all using (true) with check (true);</d
 
       <div class="sec"><div class="sec-head"><span class="sec-title">Bu ay işlemler</span></div><div class="card" id="oi"><div class="empty">İşlem yok</div></div></div>
       <div class="sec"><div class="sec-head"><span class="sec-title">Sabit ödemeler — bu ay</span></div><div class="card" id="os"><div class="empty">Sabit ödeme yok</div></div></div>
-      <div class="sec"><div class="sec-head"><span class="sec-title">Bu ay taksitler</span></div><div id="ot"><div class="empty">Taksit yok</div></div></div>
+
       <div class="sec"><div class="sec-head"><span class="sec-title">Kredi kartları</span></div><div id="ozet-kartlar"><div class="empty">Kart yok</div></div></div>
       <div class="sec"><div class="sec-head"><span class="sec-title">Krediler</span></div><div id="ozet-krediler"><div class="empty">Kredi yok</div></div></div>
     </div>
@@ -796,7 +796,7 @@ function render(){
   rI('oi',sorted,true);rI('il',sorted,false);
   rGelirDokum('ozet-gelir-dokum',ayI,y,m);
   rS('os',D.sabitler,true);rSF('sl');
-  rTOzet('ot',y,m);rTF('tl');
+  rTF('tl');
   rAlacaklar('alacak-list',y,m);
   rKartlar('kart-list');
   rKrediler('kredi-list');
@@ -848,17 +848,7 @@ function rGelirDokum(id, ayI, y, m) {
   const sabitGelirleri = D.sabitler.filter(s=>s.tur==='gelir');
   const sabitGelirToplam = sabitGelirleri.reduce((s,i)=>s+Number(i.tutar),0);
 
-  // Taksit gelirleri (alacaklar)
-  const taksitGelirleri = [];
-  D.taksitler.forEach(t=>{
-    if(t.tur!=='gelir') return;
-    const[ty2,tm2]=t.baslangic.split('-').map(Number);
-    const si=ty2*12+(tm2-1),ci=y*12+m;
-    if(ci>=si && ci<si+t.sayi) taksitGelirleri.push({aciklama:t.aciklama, tutar:Number(t.tutar)/t.sayi});
-  });
-  const taksitGelirToplam = taksitGelirleri.reduce((s,i)=>s+i.tutar,0);
-
-  const genelToplam = islemGelirToplam + sabitGelirToplam + taksitGelirToplam;
+  const genelToplam = islemGelirToplam + sabitGelirToplam;
 
   if(genelToplam === 0) { e.innerHTML='<div class="empty">Bu ay gelir yok</div>'; return; }
 
@@ -898,22 +888,7 @@ function rGelirDokum(id, ayI, y, m) {
     });
   }
 
-  // Taksit gelirleri (alacaklar)
-  if(taksitGelirleri.length) {
-    html += `<div style="padding:10px 16px;background:var(--green-bg);border-bottom:1px solid var(--border);border-top:2px solid var(--border)">
-      <div style="display:flex;justify-content:space-between;align-items:center">
-        <span style="font-size:12px;font-weight:700;color:var(--green);text-transform:uppercase;letter-spacing:.5px">🤝 Taksit Alacakları</span>
-        <span style="font-size:14px;font-weight:700;color:var(--green)">${fmt(taksitGelirToplam)}</span>
-      </div>
-    </div>`;
-    taksitGelirleri.forEach(t=>{
-      html += `<div class="row" style="padding-left:24px">
-        <div class="ri g" style="width:28px;height:28px;font-size:13px">🤝</div>
-        <div class="rinfo"><div class="rtitle" style="font-size:13px">${esc(t.aciklama)}</div><div class="rsub">Bu ay taksiti</div></div>
-        <span class="ramt g">+${fmt(t.tutar)}</span>
-      </div>`;
-    });
-  }
+
 
   // Genel toplam
   html += `<div style="padding:12px 16px;background:var(--bg3);border-top:2px solid var(--green-border);display:flex;justify-content:space-between;align-items:center">
