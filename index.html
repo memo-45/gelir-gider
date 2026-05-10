@@ -706,11 +706,11 @@ const AY=['Oca','Şub','Mar','Nis','May','Haz','Tem','Ağu','Eyl','Eki','Kas','A
 const AYLONG=['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'];
 const ICONS={Market:'🛒',Restoran:'🍽',Ulaşım:'🚗',Sağlık:'💊',Giyim:'👕',Eğlence:'🎬',Fatura:'📄',Kira:'🏠',Aidat:'🏢',Elektrik:'⚡',Su:'💧',Doğalgaz:'🔥',İnternet:'📡',Telefon:'📱',Abonelik:'📺',Maaş:'💰','Kira Geliri':'🏠','Diğer Gelir':'💵',Diğer:'📌'};
 
-let D={islemler:[],sabitler:[],taksitler:[],kartlar:[],krediler:[],sabitOdeme:{}};
+let D={islemler:[],sabitler:[],taksitler:[],kartlar:[],krediler:[],sabitOdeme:{},kisiOdemeler:{}};
 let CM={y:new Date().getFullYear(),m:new Date().getMonth()};
 let SB=null;
 
-function loadLocal(){try{const r=localStorage.getItem(LOCAL_KEY);if(r){const p=JSON.parse(r);D.islemler=p.islemler||[];D.sabitler=p.sabitler||[];D.taksitler=p.taksitler||[];D.kartlar=p.kartlar||[];D.krediler=p.krediler||[];D.sabitOdeme=p.sabitOdeme||{};}}catch(e){}}
+function loadLocal(){try{const r=localStorage.getItem(LOCAL_KEY);if(r){const p=JSON.parse(r);D.islemler=p.islemler||[];D.sabitler=p.sabitler||[];D.taksitler=p.taksitler||[];D.kartlar=p.kartlar||[];D.krediler=p.krediler||[];D.sabitOdeme=p.sabitOdeme||{};D.kisiOdemeler=p.kisiOdemeler||{};}}catch(e){}}
 function saveLocal(){try{localStorage.setItem(LOCAL_KEY,JSON.stringify(D));}catch(e){}}
 
 // ── SUPABASE REST ──────────────────────────────────────
@@ -1403,17 +1403,40 @@ function rAlacaklar(id, y, m) {
   const e = document.getElementById(id); if(!e) return;
   const liste = D.taksitler.filter(t=>t.tur==='gelir');
 
-  // Update stats
-  const now = new Date(), curIdx = now.getFullYear()*12+now.getMonth();
-  let toplamAlacak=0, tahsilEdilen=0, buAy=0;
+  // Kişileri grupla (aciklama alanı = kişi adı)
+  const kisiler = {};
   liste.forEach(t=>{
-    const per = Number(t.tutar)/t.sayi;
-    toplamAlacak += Number(t.tutar);
-    tahsilEdilen += (t.odenmisMi||[]).filter(Boolean).length * per;
-    const[ty2,tm2]=t.baslangic.split('-').map(Number);
-    const si=ty2*12+(tm2-1), ci=(y||CM.y)*12+(m!==undefined?m:CM.m);
-    if(ci>=si && ci<si+t.sayi) buAy += per;
+    const isim = t.aciklama.trim();
+    if(!kisiler[isim]) kisiler[isim] = {isim, taksitler:[], ekOdemeler:[]};
+    kisiler[isim].taksitler.push(t);
   });
+
+  // Ek ödemeleri ekle
+  Object.entries(D.kisiOdemeler||{}).forEach(([isim, odemeler])=>{
+    if(!kisiler[isim]) kisiler[isim]={isim,taksitler:[],ekOdemeler:[]};
+    kisiler[isim].ekOdemeler = odemeler;
+  });
+
+  // Toplam istatistikler
+  const now = new Date(), ci2 = now.getFullYear()*12+now.getMonth();
+  const curY = y||CM.y, curM = m!==undefined?m:CM.m, curIdx = curY*12+curM;
+  let toplamAlacak=0, tahsilEdilen=0, buAy=0;
+
+  liste.forEach(t=>{
+    const per=Number(t.tutar)/t.sayi;
+    toplamAlacak+=Number(t.tutar);
+    tahsilEdilen+=(t.odenmisMi||[]).filter(Boolean).length*per;
+    const[ty2,tm2]=t.baslangic.split('-').map(Number);
+    const si=ty2*12+(tm2-1);
+    if(curIdx>=si&&curIdx<si+t.sayi) buAy+=per;
+  });
+
+  // Ek ödemeleri toplama ekle
+  Object.values(D.kisiOdemeler||{}).forEach(odemeler=>{
+    odemeler.forEach(o=>{ tahsilEdilen+=Number(o.tutar); });
+  });
+
+  const bekleyen = Math.max(0, toplamAlacak-tahsilEdilen);
 
   const elT=document.getElementById('al-toplam');
   const elG=document.getElementById('al-gelen');
@@ -1421,47 +1444,108 @@ function rAlacaklar(id, y, m) {
   const elA=document.getElementById('al-buay');
   if(elT) elT.textContent=fmt(toplamAlacak);
   if(elG) elG.textContent=fmt(tahsilEdilen);
-  if(elB) { elB.textContent=fmt(toplamAlacak-tahsilEdilen); elB.className='sval '+(toplamAlacak-tahsilEdilen>0?'':'g'); }
+  if(elB) { elB.textContent=fmt(bekleyen); elB.className='sval '+(bekleyen>0?'r':'g'); }
   if(elA) elA.textContent=fmt(buAy);
 
-  if(!liste.length){e.innerHTML='<div class="empty">Alacak yok<br><small style="color:var(--text3)">Yeni Ekle → Taksitli → Alacak seçerek ekle</small></div>';return;}
+  if(!Object.keys(kisiler).length){
+    e.innerHTML='<div class="empty">Alacak yok<br><small style="color:var(--text3)">Yeni Ekle → Taksitli → Alacak seçerek ekle</small></div>';
+    return;
+  }
 
-  const ci2 = now.getFullYear()*12+now.getMonth();
-  e.innerHTML = liste.map(t=>{
-    const[ty2,tm2]=t.baslangic.split('-').map(Number);
-    const si=ty2*12+(tm2-1);
-    const odenen=(t.odenmisMi||[]).filter(Boolean).length;
-    const kalan=t.sayi-odenen, per=Number(t.tutar)/t.sayi;
-    const kalanTutar=kalan*per;
-    const pct=Math.round((odenen/t.sayi)*100);
-    const months=Array.from({length:t.sayi},(_,i)=>{
-      const idx=si+i, my=Math.floor(idx/12), mm=idx%12;
-      const isPaid=t.odenmisMi&&t.odenmisMi[i];
-      const isCur=idx===ci2, isFut=idx>ci2;
-      let cls='mb';
-      if(isPaid)cls+=' paid';
-      else if(isCur)cls+=' cur';
-      else if(isFut)cls+=' fut';
-      return`<button class="${cls}" onclick="toggleOde('${t.id}',${i})" title="${AY[mm]} ${my}">
-        <span class="mn">${i+1}</span>
-        <span class="ml">${AY[mm]}</span>
-      </button>`;
-    }).join('');
-    return`<div class="tcard">
-      <div class="thead2">
-        <div class="ri g" style="font-size:18px">🤝</div>
-        <div class="tmeta">
-          <div class="tname">${esc(t.aciklama)}<span class="badge g">${odenen}/${t.sayi}</span></div>
-          <div class="tsub">${t.kart?esc(t.kart)+' · ':''}Aylık ${fmt(per)} · Kalan ${fmt(kalanTutar)}</div>
+  e.innerHTML = Object.values(kisiler).map(kisi=>{
+    // Kişinin toplam taksit alacağı
+    let kisiToplam=0, kisiOdenen=0, kisiEkOdeme=0;
+    kisi.taksitler.forEach(t=>{
+      kisiToplam+=Number(t.tutar);
+      kisiOdenen+=(t.odenmisMi||[]).filter(Boolean).length*(Number(t.tutar)/t.sayi);
+    });
+    kisi.ekOdemeler.forEach(o=>kisiEkOdeme+=Number(o.tutar));
+    const kisiKalan = Math.max(0, kisiToplam-(kisiOdenen+kisiEkOdeme));
+
+    // Taksit kartları
+    const taksitHTML = kisi.taksitler.map(t=>{
+      const[ty2,tm2]=t.baslangic.split('-').map(Number);
+      const si=ty2*12+(tm2-1);
+      const odenen=(t.odenmisMi||[]).filter(Boolean).length;
+      const kalan=t.sayi-odenen, per=Number(t.tutar)/t.sayi;
+      const pct=Math.round((odenen/t.sayi)*100);
+      const months=Array.from({length:t.sayi},(_,i)=>{
+        const idx=si+i, mm=idx%12;
+        const isPaid=t.odenmisMi&&t.odenmisMi[i];
+        const isCur=idx===ci2, isFut=idx>ci2;
+        let cls='mb';
+        if(isPaid)cls+=' paid';else if(isCur)cls+=' cur';else if(isFut)cls+=' fut';
+        return`<button class="${cls}" onclick="toggleOde('${t.id}',${i})" title="${AY[mm]}">
+          <span class="mn">${i+1}</span><span class="ml">${AY[mm]}</span>
+        </button>`;
+      }).join('');
+      return`<div style="margin-bottom:10px;padding:12px;background:var(--bg3);border-radius:var(--r2);border:1px solid var(--border)">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <div>
+            <span style="font-size:13px;font-weight:600">${t.kart?esc(t.kart)+' · ':''}${t.sayi} taksit</span>
+            <span class="badge g">${odenen}/${t.sayi}</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px">
+            <span style="font-size:13px;font-weight:700;color:var(--green)">${fmt(Number(t.tutar))}</span>
+            <button class="bico edit" onclick="editTaksit('${t.id}')">✎</button>
+            <button class="bico" onclick="delT('${t.id}')">✕</button>
+          </div>
         </div>
-        <div class="tamt" style="color:var(--green)">${fmt(Number(t.tutar))}</div>
-        <button class="bico edit" onclick="editTaksit('${t.id}')">✎</button>
-        <button class="bico" onclick="delT('${t.id}')">✕</button>
+        <div style="font-size:12px;color:var(--text2);margin-bottom:8px">Aylık ${fmt(per)} · Kalan ${fmt(kalan*per)}</div>
+        <div class="pbar"><div class="pfill" style="width:${pct}%;background:var(--green)"></div></div>
+        <div class="mgrid" style="margin-top:8px">${months}</div>
+      </div>`;
+    }).join('');
+
+    // Ek ödemeler listesi
+    const ekOdemeHTML = kisi.ekOdemeler.length ? `
+      <div style="margin-top:8px">
+        <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Peşin Ödemeler</div>
+        ${kisi.ekOdemeler.map((o,i)=>`
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--border);font-size:13px">
+            <span style="color:var(--text2)">${new Date(o.tarih).toLocaleDateString('tr-TR')}${o.not?' · '+esc(o.not):''}</span>
+            <div style="display:flex;align-items:center;gap:8px">
+              <span style="font-weight:700;color:var(--green)">+${fmt(o.tutar)}</span>
+              <button class="bico" onclick="delEkOdeme('${kisi.isim}',${i})" style="width:22px;height:22px;font-size:11px">✕</button>
+            </div>
+          </div>`).join('')}
+      </div>` : '';
+
+    return`<div class="tcard" style="margin-bottom:16px">
+      <div class="thead2" style="margin-bottom:10px">
+        <div class="ri g" style="font-size:20px;width:40px;height:40px">👤</div>
+        <div class="tmeta">
+          <div class="tname" style="font-size:16px">${esc(kisi.isim)}</div>
+          <div class="tsub">Toplam: ${fmt(kisiToplam)} · Kalan: <span style="color:${kisiKalan>0?'var(--red)'  :'var(--green)'};font-weight:700">${fmt(kisiKalan)}</span></div>
+        </div>
       </div>
-      <div class="pbar"><div class="pfill" style="width:${pct}%;background:var(--green)"></div></div>
-      <div class="mgrid">${months}</div>
+      ${taksitHTML}
+      ${ekOdemeHTML}
+      <div style="display:flex;gap:8px;margin-top:10px;padding-top:10px;border-top:1px solid var(--border)">
+        <input type="number" id="ekode-${kisi.isim.replace(/\s/g,'_')}" placeholder="Peşin ödeme tutarı..." style="flex:1;padding:8px 10px;border:1.5px solid var(--border);border-radius:var(--r3);font-size:14px;background:var(--bg3);color:var(--text);font-family:inherit">
+        <input type="text" id="eknot-${kisi.isim.replace(/\s/g,'_')}" placeholder="Not (opsiyonel)" style="flex:1;padding:8px 10px;border:1.5px solid var(--border);border-radius:var(--r3);font-size:14px;background:var(--bg3);color:var(--text);font-family:inherit">
+        <button class="btn-sm" onclick="ekleEkOdeme('${kisi.isim}')" style="white-space:nowrap">+ Peşin</button>
+      </div>
     </div>`;
   }).join('');
+}
+
+function ekleEkOdeme(isim) {
+  const key = isim.replace(/\s/g,'_');
+  const tutar = parseFloat(document.getElementById('ekode-'+key)?.value);
+  const not = document.getElementById('eknot-'+key)?.value.trim()||'';
+  if(!tutar||tutar<=0){toast('Geçerli tutar gir');return;}
+  if(!D.kisiOdemeler) D.kisiOdemeler={};
+  if(!D.kisiOdemeler[isim]) D.kisiOdemeler[isim]=[];
+  D.kisiOdemeler[isim].push({tutar, not, tarih:new Date().toISOString().split('T')[0]});
+  saveLocal();render();
+  toast(isim+' - '+fmt(tutar)+' alındı ✓');
+}
+
+function delEkOdeme(isim, idx) {
+  if(!D.kisiOdemeler?.[isim]) return;
+  D.kisiOdemeler[isim].splice(idx,1);
+  saveLocal();render();toast('Silindi');
 }
 
 // ── INIT ───────────────────────────────────────────────
