@@ -468,6 +468,7 @@ create policy "anon_all" on taksitler for all using (true) with check (true);</d
       <button class="nav-item" onclick="showTab('islemler',this)"><span class="ni">↕</span> İşlemler</button>
       <button class="nav-item" onclick="showTab('sabit',this)"><span class="ni">⟳</span> Sabit Ödemeler</button>
       <button class="nav-item" onclick="showTab('taksitler',this)"><span class="ni">▦</span> Taksitler</button>
+      <button class="nav-item" onclick="showTab('alacaklar',this)"><span class="ni">🤝</span> Alacaklar</button>
       <button class="nav-item" onclick="showTab('kartlar',this)"><span class="ni">💳</span> Kartlar</button>
       <button class="nav-item" onclick="showTab('krediler',this)"><span class="ni">🏦</span> Krediler</button>
       <button class="nav-item" onclick="showTab('ekle',this)"><span class="ni">+</span> Yeni Ekle</button>
@@ -668,6 +669,21 @@ create policy "anon_all" on taksitler for all using (true) with check (true);</d
       </div>
       <div id="kredi-list"><div class="empty">Henüz kredi eklenmemiş</div></div>
     </div>
+
+    <!-- ALACAKLAR -->
+    <div id="panel-alacaklar" class="panel">
+      <div class="page-header">
+        <div><h1 class="page-title">Alacaklar</h1><p class="page-sub">Senden taksitli borçlananlar</p></div>
+      </div>
+      <div class="stats">
+        <div class="stat g"><div class="slbl">Toplam Alacak</div><div class="sval g" id="al-toplam">₺0</div></div>
+        <div class="stat g"><div class="slbl">Tahsil Edilen</div><div class="sval g" id="al-gelen">₺0</div></div>
+        <div class="stat b"><div class="slbl">Bekleyen</div><div class="sval" id="al-bekleyen">₺0</div></div>
+        <div class="stat a"><div class="slbl">Bu Ay</div><div class="sval a" id="al-buay">₺0</div></div>
+      </div>
+      <div class="sec-head" style="margin:16px 0 12px"><span class="sec-title">Ödenen aya tıkla</span></div>
+      <div id="alacak-list"><div class="empty">Alacak yok</div></div>
+    </div>
   </main>
 </div>
 
@@ -768,7 +784,7 @@ function render(){
   D.taksitler.forEach(t=>{
     const[ty2,tm2]=t.baslangic.split('-').map(Number);
     const si=ty2*12+(tm2-1),ci=y*12+m;
-    if(ci>=si&&ci<si+t.sayi){const p=Number(t.tutar)/t.sayi;if(t.tur==='gider')tG+=p;else tGl+=p;}
+    if(ci>=si&&ci<si+t.sayi){const p=Number(t.tutar)/t.sayi;if(t.tur==='gider')tG+=p;}
   });
   const totG=gelir+sbGl+tGl,totD=gider+sbG+tG,net=totG-totD;
   document.getElementById('sg').textContent=fmt(totG);
@@ -781,6 +797,7 @@ function render(){
   rGelirDokum('ozet-gelir-dokum',ayI,y,m);
   rS('os',D.sabitler,true);rSF('sl');
   rTOzet('ot',y,m);rTF('tl');
+  rAlacaklar('alacak-list',y,m);
   rKartlar('kart-list');
   rKrediler('kredi-list');
   rOzetKartlar('ozet-kartlar');
@@ -979,7 +996,7 @@ function rOzetKrediler(id){
 
 function rTOzet(id,y,m){
   const e=document.getElementById(id);
-  const aktif=D.taksitler.filter(t=>{const[ty2,tm2]=t.baslangic.split('-').map(Number);const si=ty2*12+(tm2-1),ci=y*12+m;return ci>=si&&ci<si+t.sayi;});
+  const aktif=D.taksitler.filter(t=>{if(t.tur!=='gider')return false;const[ty2,tm2]=t.baslangic.split('-').map(Number);const si=ty2*12+(tm2-1),ci=y*12+m;return ci>=si&&ci<si+t.sayi;});
   if(!aktif.length){e.innerHTML='<div class="empty">Bu ay taksit yok</div>';return;}
   e.innerHTML=aktif.map(t=>{
     const[ty2,tm2]=t.baslangic.split('-').map(Number);
@@ -993,9 +1010,10 @@ function rTOzet(id,y,m){
 
 function rTF(id){
   const e=document.getElementById(id);
-  if(!D.taksitler.length){e.innerHTML='<div class="empty">Taksit yok</div>';return;}
+  const liste=D.taksitler.filter(t=>t.tur==='gider');
+  if(!liste.length){e.innerHTML='<div class="empty">Taksit yok</div>';return;}
   const now=new Date(),curIdx=now.getFullYear()*12+now.getMonth();
-  e.innerHTML=D.taksitler.map(t=>{
+  e.innerHTML=liste.map(t=>{
     const[ty2,tm2]=t.baslangic.split('-').map(Number);
     const si=ty2*12+(tm2-1);
     const odenen=(t.odenmisMi||[]).filter(Boolean).length;
@@ -1379,6 +1397,73 @@ function closeMoreMenu(){
   document.getElementById('more-menu').classList.add('hidden');
 }
 
+
+// ── ALACAKLAR ──────────────────────────────────────────
+function rAlacaklar(id, y, m) {
+  const e = document.getElementById(id); if(!e) return;
+  const liste = D.taksitler.filter(t=>t.tur==='gelir');
+
+  // Update stats
+  const now = new Date(), curIdx = now.getFullYear()*12+now.getMonth();
+  let toplamAlacak=0, tahsilEdilen=0, buAy=0;
+  liste.forEach(t=>{
+    const per = Number(t.tutar)/t.sayi;
+    toplamAlacak += Number(t.tutar);
+    tahsilEdilen += (t.odenmisMi||[]).filter(Boolean).length * per;
+    const[ty2,tm2]=t.baslangic.split('-').map(Number);
+    const si=ty2*12+(tm2-1), ci=(y||CM.y)*12+(m!==undefined?m:CM.m);
+    if(ci>=si && ci<si+t.sayi) buAy += per;
+  });
+
+  const elT=document.getElementById('al-toplam');
+  const elG=document.getElementById('al-gelen');
+  const elB=document.getElementById('al-bekleyen');
+  const elA=document.getElementById('al-buay');
+  if(elT) elT.textContent=fmt(toplamAlacak);
+  if(elG) elG.textContent=fmt(tahsilEdilen);
+  if(elB) { elB.textContent=fmt(toplamAlacak-tahsilEdilen); elB.className='sval '+(toplamAlacak-tahsilEdilen>0?'':'g'); }
+  if(elA) elA.textContent=fmt(buAy);
+
+  if(!liste.length){e.innerHTML='<div class="empty">Alacak yok<br><small style="color:var(--text3)">Yeni Ekle → Taksitli → Alacak seçerek ekle</small></div>';return;}
+
+  const ci2 = now.getFullYear()*12+now.getMonth();
+  e.innerHTML = liste.map(t=>{
+    const[ty2,tm2]=t.baslangic.split('-').map(Number);
+    const si=ty2*12+(tm2-1);
+    const odenen=(t.odenmisMi||[]).filter(Boolean).length;
+    const kalan=t.sayi-odenen, per=Number(t.tutar)/t.sayi;
+    const kalanTutar=kalan*per;
+    const pct=Math.round((odenen/t.sayi)*100);
+    const months=Array.from({length:t.sayi},(_,i)=>{
+      const idx=si+i, my=Math.floor(idx/12), mm=idx%12;
+      const isPaid=t.odenmisMi&&t.odenmisMi[i];
+      const isCur=idx===ci2, isFut=idx>ci2;
+      let cls='mb';
+      if(isPaid)cls+=' paid';
+      else if(isCur)cls+=' cur';
+      else if(isFut)cls+=' fut';
+      return`<button class="${cls}" onclick="toggleOde('${t.id}',${i})" title="${AY[mm]} ${my}">
+        <span class="mn">${i+1}</span>
+        <span class="ml">${AY[mm]}</span>
+      </button>`;
+    }).join('');
+    return`<div class="tcard">
+      <div class="thead2">
+        <div class="ri g" style="font-size:18px">🤝</div>
+        <div class="tmeta">
+          <div class="tname">${esc(t.aciklama)}<span class="badge g">${odenen}/${t.sayi}</span></div>
+          <div class="tsub">${t.kart?esc(t.kart)+' · ':''}Aylık ${fmt(per)} · Kalan ${fmt(kalanTutar)}</div>
+        </div>
+        <div class="tamt" style="color:var(--green)">${fmt(Number(t.tutar))}</div>
+        <button class="bico edit" onclick="editTaksit('${t.id}')">✎</button>
+        <button class="bico" onclick="delT('${t.id}')">✕</button>
+      </div>
+      <div class="pbar"><div class="pfill" style="width:${pct}%;background:var(--green)"></div></div>
+      <div class="mgrid">${months}</div>
+    </div>`;
+  }).join('');
+}
+
 // ── INIT ───────────────────────────────────────────────
 SB={url:'https://nofztogikguiozxmzker.supabase.co',key:'sb_publishable_o_awlrLka8OMznASAJ029A_OAqndKPU'};
 document.getElementById('setup-modal').classList.add('hidden');
@@ -1423,6 +1508,9 @@ window.addEventListener('beforeunload',saveLocal);
       </button>
       <button onclick="showTabMobile('taksitler');closeMoreMenu()" style="display:flex;align-items:center;gap:10px;padding:14px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--r2);cursor:pointer;font-size:14px;font-weight:600;font-family:inherit;color:var(--text)">
         <span style="font-size:20px">▦</span> Taksitler
+      </button>
+      <button onclick="showTabMobile('alacaklar');closeMoreMenu()" style="display:flex;align-items:center;gap:10px;padding:14px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--r2);cursor:pointer;font-size:14px;font-weight:600;font-family:inherit;color:var(--text)">
+        <span style="font-size:20px">🤝</span> Alacaklar
       </button>
       <button onclick="showTabMobile('krediler');closeMoreMenu()" style="display:flex;align-items:center;gap:10px;padding:14px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--r2);cursor:pointer;font-size:14px;font-weight:600;font-family:inherit;color:var(--text)">
         <span style="font-size:20px">🏦</span> Krediler
